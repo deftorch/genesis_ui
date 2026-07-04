@@ -1,48 +1,161 @@
-// Types for AI Models
-export type AIProvider = 'google';
+// types/index.ts
 
-export type AIModel = 
-  | 'gemini-3-flash'
-  | 'gemini-2.5-flash'
-  | 'gemini-2.5-flash-lite';
+// --- Deftorch Provider & Model Types ---
+export type AIProvider = string;
+export type AIModel = string;
 
-export interface ModelConfig {
+export interface ProviderInfo {
   id: string;
   name: string;
-  provider: AIProvider;
-  model: AIModel;
-  temperature: number;
-  maxTokens: number;
-  topP: number;
-  frequencyPenalty: number;
-  presencePenalty: number;
-  systemPrompt?: string;
+  logo: string;
+  description: string;
+  apiKeyEnvVar: string;
+  defaultBaseUrl?: string;
+  isCustom?: boolean;
 }
 
-// Types for Chat
+export interface ModelInfo {
+  id: string;
+  name: string;
+  providerId: string;
+  description: string;
+  maxContext: string;
+  rpmFree?: number;
+  tpmFree?: string;
+  pricing?: string;
+  isPopular?: boolean;
+  isCustom?: boolean;
+}
+
+// --- Deftorch ModelConfig ---
+export interface ModelConfig {
+  // Common
+  provider: AIProvider;
+  model: AIModel;
+  systemInstruction: string;
+  temperature: number;
+  topP: number;
+  topK: number;
+  maxOutputTokens: number;
+  // Thinking fields
+  thinkingMode?: boolean;
+  setThinkingBudget?: boolean;
+  thinkingBudget?: number;
+  // Tools
+  useStructuredOutputs?: boolean;
+  structuredOutputsSchema?: string;
+  useCodeExecution?: boolean;
+  useFunctionCalling?: boolean;
+  functionCallingConfig?: string;
+  useSearchGrounding?: boolean;
+  useMapsGrounding?: boolean;
+  useUrlContext?: boolean;
+  // Advanced settings
+  mediaResolution?: 'Default' | 'Low' | 'Medium' | 'High';
+  safetyHarassment?: 'block_none' | 'block_few' | 'block_some' | 'block_most';
+  safetyHate?: 'block_none' | 'block_few' | 'block_some' | 'block_most';
+  safetySexuallyExplicit?: 'block_none' | 'block_few' | 'block_some' | 'block_most';
+  safetyDangerousContent?: 'block_none' | 'block_few' | 'block_some' | 'block_most';
+  stopSequences?: string[];
+  outputLength?: number;
+  // Speech/TTS settings
+  speechVoice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Zephyr';
+  speechStyle?: 'cheerful' | 'sad' | 'excited' | 'whisper' | 'formal' | 'none';
+  speechMode?: 'single' | 'multi';
+  autoPlaySpeech?: boolean;
+}
+
+// --- Deftorch Agent & Composite Models ---
+export interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  systemInstruction: string;
+  modelId: string;
+  temperature: number;
+  useSearchGrounding: boolean;
+  useCodeExecution: boolean;
+  useStructuredOutputs: boolean;
+  avatar: string;
+  isCustom?: boolean;
+}
+
+export interface CompositeStep {
+  id: string;
+  modelId: string;
+  role: string;
+  prompt: string;
+  temperature: number;
+}
+
+export interface CompositeRouterRule {
+  id: string;
+  keyword: string;
+  targetModelId: string;
+  description: string;
+}
+
+export interface CompositeModel {
+  id: string;
+  name: string;
+  description: string;
+  strategy: 'sequential' | 'routing' | 'consensus';
+  isCustom?: boolean;
+  steps?: CompositeStep[];
+  routerModelId?: string;
+  routerRules?: CompositeRouterRule[];
+  fallbackModelId?: string;
+  expertModelIds?: string[];
+  aggregatorModelId?: string;
+}
+
+// --- Genesis & Deftorch Unified Message ---
+export interface Attachment {
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string; // Base64
+  preview?: string; // from Genesis
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  images?: ImageAttachment[];
-  timestamp: Date;
-  tokens?: number;
+  timestamp: Date | string; // Supporting both formats for transition
+  // Genesis fields
   isEdited?: boolean;
-  parentId?: string; // For branching conversations
+  parentId?: string;
   versions?: string[];
   activeVersionIdx?: number;
+  images?: ImageAttachment[]; // legacy image attachments
+  // Deftorch fields
+  attachments?: Attachment[];
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  agentName?: string;
+  agentAvatar?: string;
 }
 
-export interface ImageAttachment {
+// --- Deftorch Stream Metrics & Debug Logs ---
+export interface DebugLog {
   id: string;
-  url: string;
-  name: string;
-  size: number;
-  type: string;
-  preview?: string;
-  analysis?: ImageAnalysisResult;
+  timestamp: string;
+  type: 'info' | 'success' | 'warn' | 'error' | 'in' | 'out';
+  message: string;
 }
 
+export interface StreamMetrics {
+  ttft: number | null; 
+  duration: number | null; 
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  tokensPerSecond: number | null;
+}
+
+// --- Genesis Chat & Project ---
 export interface Chat {
   id: string;
   title: string;
@@ -50,36 +163,41 @@ export interface Chat {
   modelConfig: ModelConfig;
   createdAt: Date;
   updatedAt: Date;
-  summary?: string; // Rangkuman chat untuk context
-  lastSummarizedIndex?: number; // Index message terakhir yang sudah dirangkum
+  summary?: string; 
+  lastSummarizedIndex?: number;
   projectId?: string;
   isStarred: boolean;
   totalTokens: number;
+  // new fields for agent/composite routing
+  agentId?: string;
+  compositeModelId?: string;
 }
 
-// Types for Image Analysis
-export type AnalysisType = 
-  | 'object-detection'
-  | 'label-detection'
-  | 'text-recognition'
-  | 'face-detection'
-  | 'landmark-recognition'
-  | 'image-description'
-  | 'visual-qa';
-
-export interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  chatIds: string[];
+  createdAt: Date;
 }
 
-export interface Detection {
-  label: string;
-  confidence: number;
-  boundingBox?: BoundingBox;
+// --- Genesis Artifacts ---
+export type RendererType = 'p5' | 'd3' | 'svg' | 'mermaid' | 'twojs' | 'mojs' | 'pixi' | 'gsap' | 'anime' | 'lottie' | 'matter' | 'html' | 'remotion' | 'plan';
+
+export interface Artifact {
+  id: string;
+  chatId: string;
+  chatTitle: string;
+  code: string;
+  renderer: RendererType;
+  createdAt: Date;
 }
 
+// --- Genesis Image Analysis (Legacy but kept) ---
+export type AnalysisType = 'object-detection' | 'label-detection' | 'text-recognition' | 'face-detection' | 'landmark-recognition' | 'image-description' | 'visual-qa';
+
+export interface BoundingBox { x: number; y: number; width: number; height: number; }
+export interface Detection { label: string; confidence: number; boundingBox?: BoundingBox; }
 export interface ImageAnalysisResult {
   type: AnalysisType;
   detections: Detection[];
@@ -87,8 +205,11 @@ export interface ImageAnalysisResult {
   text?: string;
   metadata?: Record<string, any>;
 }
+export interface ImageAttachment {
+  id: string; url: string; name: string; size: number; type: string; preview?: string; analysis?: ImageAnalysisResult;
+}
 
-// Types for User & Settings
+// --- User & Settings ---
 export interface User {
   id: string;
   email: string;
@@ -115,45 +236,10 @@ export interface UserPreferences {
   developerMode?: boolean;
 }
 
-// Types for Analytics
 export interface UsageStats {
   totalTokens: number;
   totalCost: number;
   apiCalls: number;
-  modelUsage: Record<AIModel, number>;
-  dailyUsage: Array<{
-    date: string;
-    tokens: number;
-    cost: number;
-  }>;
-}
-
-// Types for Projects
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  chatIds: string[];
-  createdAt: Date;
-}
-
-// Export Types
-export type ExportFormat = 'pdf' | 'markdown' | 'json' | 'text';
-
-export interface ExportOptions {
-  format: ExportFormat;
-  includeImages: boolean;
-  includeMetadata: boolean;
-}
-
-// Renderer and Artifact Types
-export type RendererType = 'p5' | 'd3' | 'svg' | 'mermaid' | 'twojs' | 'mojs' | 'pixi' | 'gsap' | 'anime' | 'lottie' | 'matter' | 'html' | 'remotion' | 'plan';
-
-export interface Artifact {
-  id: string;
-  chatId: string;
-  chatTitle: string;
-  code: string;
-  renderer: RendererType;
-  createdAt: Date;
+  modelUsage: Record<string, number>;
+  dailyUsage: Array<{ date: string; tokens: number; cost: number; }>;
 }

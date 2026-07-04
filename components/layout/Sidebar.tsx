@@ -16,6 +16,11 @@ import {
   Star,
   ChevronDown,
   ChevronRight,
+  Users,
+  GitBranch,
+  Box,
+  LineChart,
+  Terminal,
 } from 'lucide-react';
 
 import { useUIStore } from '@/lib/store/ui-store';
@@ -284,6 +289,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 )}
               </button>
+
+              <button
+                onClick={() => {
+                  ui.setCurrentView('agents');
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'agents' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
+              >
+                <Users size={18} />
+                <span>Agents</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  ui.setCurrentView('workflows');
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'workflows' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
+              >
+                <GitBranch size={18} />
+                <span>Workflows</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  ui.setCurrentView('models');
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'models' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
+              >
+                <Box size={18} />
+                <span>Models</span>
+              </button>
             </div>
 
             {/* Sidebar Content - Always show chat history */}
@@ -339,6 +377,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Footer - Account & Settings */}
             <div className="border-t border-gray-200 dark:border-white/10 pt-3 flex flex-col gap-2 mt-auto">
+              
+              <div className="flex flex-col gap-1 mb-2">
+                <button
+                  onClick={() => {
+                    ui.setCurrentView('analysis');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'analysis' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
+                >
+                  <LineChart size={18} />
+                  <span>Analysis</span>
+                </button>
+                <button
+                  onClick={() => {
+                    ui.setCurrentView('debug');
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'debug' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
+                >
+                  <Terminal size={18} />
+                  <span>Debug Console</span>
+                </button>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-[#1a6adf]/10 text-[#1a6adf] dark:bg-[#60aaff]/20 dark:text-[#60aaff] border border-[#1a6adf]/20 dark:border-[#60aaff]/40 flex items-center justify-center text-xs font-bold flex-shrink-0 select-none">
@@ -452,7 +514,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Images size={18} />
               </button>
 
+              {/* Agents */}
+              <button
+                onClick={() => ui.setCurrentView('agents')}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${ui.currentView === 'agents' ? 'bg-[#1a6adf]/18 text-[#0a1628] border border-[#1a6adf]/30 dark:bg-[#60aaff]/15 dark:text-[#60aaff] dark:border-[#60aaff]/20' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'}`}
+                title="Agents"
+              >
+                <Users size={18} />
+              </button>
+
+              {/* Workflows */}
+              <button
+                onClick={() => ui.setCurrentView('workflows')}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${ui.currentView === 'workflows' ? 'bg-[#1a6adf]/18 text-[#0a1628] border border-[#1a6adf]/30 dark:bg-[#60aaff]/15 dark:text-[#60aaff] dark:border-[#60aaff]/20' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'}`}
+                title="Workflows"
+              >
+                <GitBranch size={18} />
+              </button>
+
+              {/* Models */}
+              <button
+                onClick={() => ui.setCurrentView('models')}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${ui.currentView === 'models' ? 'bg-[#1a6adf]/18 text-[#0a1628] border border-[#1a6adf]/30 dark:bg-[#60aaff]/15 dark:text-[#60aaff] dark:border-[#60aaff]/20' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'}`}
+                title="Models"
+              >
+                <Box size={18} />
+              </button>
+
               <div className="flex-1" />
+
+              {/* Analysis */}
+              <button
+                onClick={() => ui.setCurrentView('analysis')}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${ui.currentView === 'analysis' ? 'bg-[#1a6adf]/18 text-[#0a1628] border border-[#1a6adf]/30 dark:bg-[#60aaff]/15 dark:text-[#60aaff] dark:border-[#60aaff]/20' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'}`}
+                title="Analysis"
+              >
+                <LineChart size={18} />
+              </button>
+
+              {/* Debug Console */}
+              <button
+                onClick={() => ui.setCurrentView('debug')}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all cursor-pointer ${ui.currentView === 'debug' ? 'bg-[#1a6adf]/18 text-[#0a1628] border border-[#1a6adf]/30 dark:bg-[#60aaff]/15 dark:text-[#60aaff] dark:border-[#60aaff]/20' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'}`}
+                title="Debug Console"
+              >
+                <Terminal size={18} />
+              </button>
 
               {/* Settings */}
               <button

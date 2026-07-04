@@ -4,19 +4,11 @@ export interface UsageMetadata {
   totalTokenCount?: number;
 }
 
-export interface GeminiStreamChunk {
-  candidates?: {
-    content?: {
-      parts?: { text?: string }[];
-    };
-  }[];
-  usageMetadata?: UsageMetadata;
-}
-
 export const parseSSEStream = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,
   onChunk: (textChunk: string) => void,
-  onDone?: (finalUsageMetadata: UsageMetadata | null) => void
+  onDone?: (finalUsageMetadata: UsageMetadata | null) => void,
+  onEvent?: (eventData: any) => void
 ) => {
   const decoder = new TextDecoder('utf-8');
   let done = false;
@@ -37,12 +29,26 @@ export const parseSSEStream = async (
           const dataStr = trimmedLine.slice(5).trim();
           if (dataStr === '[DONE]' || !dataStr) continue;
           try {
-            const data: GeminiStreamChunk = JSON.parse(dataStr);
-            if (data.usageMetadata) finalUsageMetadata = data.usageMetadata;
+            const eventData = JSON.parse(dataStr);
             
-            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textChunk) {
-              onChunk(textChunk);
+            // Invoke onEvent callback with raw event payload
+            if (onEvent) onEvent(eventData);
+
+            if (eventData.type === 'chunk' && typeof eventData.text === 'string') {
+              onChunk(eventData.text);
+            } else if (eventData.type === 'finish') {
+              if (eventData.usage) {
+                finalUsageMetadata = {
+                  promptTokenCount: eventData.usage.promptTokens,
+                  candidatesTokenCount: eventData.usage.completionTokens,
+                  totalTokenCount: eventData.usage.totalTokens
+                };
+              }
+            } else if (eventData.candidates) {
+              // Legacy fallback for native Gemini stream
+              if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
+              const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (textChunk) onChunk(textChunk);
             }
           } catch (e) {
             // Abaikan JSON yang tidak valid
@@ -52,14 +58,26 @@ export const parseSSEStream = async (
     }
   }
 
+  // Handle remaining buffer
   if (buffer.trim().startsWith('data:')) {
     try {
       const dataStr = buffer.trim().slice(5).trim();
       if (dataStr && dataStr !== '[DONE]') {
-        const data: GeminiStreamChunk = JSON.parse(dataStr);
-        if (data.usageMetadata) finalUsageMetadata = data.usageMetadata;
-        const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (textChunk) onChunk(textChunk);
+        const eventData = JSON.parse(dataStr);
+        if (onEvent) onEvent(eventData);
+        if (eventData.type === 'chunk' && typeof eventData.text === 'string') {
+          onChunk(eventData.text);
+        } else if (eventData.type === 'finish' && eventData.usage) {
+          finalUsageMetadata = {
+            promptTokenCount: eventData.usage.promptTokens,
+            candidatesTokenCount: eventData.usage.completionTokens,
+            totalTokenCount: eventData.usage.totalTokens
+          };
+        } else if (eventData.candidates) {
+          if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
+          const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textChunk) onChunk(textChunk);
+        }
       }
     } catch (e) {}
   }

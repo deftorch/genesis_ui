@@ -7,7 +7,8 @@ import { useUIStore } from '@/lib/store/ui-store';
 import { useSettingsStore } from '@/lib/store/settings-store';
 import { useToast } from '@/lib/store/toast-store';
 import { AIModel, ImageAttachment } from '@/types';
-import { FILE_UPLOAD_CONFIG, AI_MODELS } from '@/config/constants';
+import { FILE_UPLOAD_CONFIG } from '@/config/constants';
+import { DEFAULT_MODELS, PRESET_PROVIDERS } from '@/config/deftorch-presets';
 
 interface ActiveChatViewProps {
   messages: any[];
@@ -146,44 +147,41 @@ export const ActiveChatView: React.FC<ActiveChatViewProps> = ({
               <div className="flex items-center gap-2">
                 <div className="relative" ref={modelDropdownRef}>
                   <button
-                    onClick={() => {
-                      if (!preferences.developerMode) {
-                        toast({
-                          title: 'Developer Mode Required',
-                          description: 'Enable Developer Mode to select a model.',
-                          variant: 'destructive',
-                        });
-                        return;
-                      }
-                      setIsModelDropdownOpen(!isModelDropdownOpen);
-                    }}
+                    onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                     disabled={isLoading}
                     className="flex items-center gap-1 bg-transparent hover:bg-[#1a6adf]/10 dark:hover:bg-white/10 rounded-lg py-1 px-2.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0a1628] dark:hover:text-white transition-colors cursor-pointer font-medium disabled:opacity-50"
                   >
                     <span>
-                      {preferences.developerMode
-                        ? AI_MODELS[selectedModel]?.name || selectedModel
-                        : 'Auto'}
+                      {DEFAULT_MODELS.find(m => m.id === selectedModel)?.name || selectedModel || 'Select Model'}
                     </span>
                     <ChevronDown size={12} className={`stroke-[2] transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isModelDropdownOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-[#151121] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in">
-                      <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1">
-                        Select Model
-                      </div>
-                      {Object.entries(AI_MODELS).map(([modelId, m]) => (
-                        <button
-                          key={modelId}
-                          onClick={() => {
-                            setSelectedModel(modelId as AIModel);
-                            setIsModelDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === modelId ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-                        >
-                          <span>{m.name}</span>
-                        </button>
-                      ))}
+                    <div className="absolute bottom-full left-0 mb-2 w-64 max-h-[60vh] overflow-y-auto bg-white dark:bg-[#151121] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in custom-scrollbar">
+                      {PRESET_PROVIDERS.map(provider => {
+                        const providerModels = DEFAULT_MODELS.filter(m => m.providerId === provider.id);
+                        if (providerModels.length === 0) return null;
+                        
+                        return (
+                          <div key={provider.id} className="mb-2 last:mb-0">
+                            <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1 flex items-center gap-1">
+                              {provider.logo} {provider.name}
+                            </div>
+                            {providerModels.map((m) => (
+                              <button
+                                key={m.id}
+                                onClick={() => {
+                                  setSelectedModel(m.id as AIModel);
+                                  setIsModelDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === m.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                              >
+                                <span>{m.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

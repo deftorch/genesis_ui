@@ -115,16 +115,13 @@ export const AI_MODELS: Record<AIModel, { name: string; provider: AIProvider; co
 
 // Default Model Configuration
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  id: 'default',
-  name: 'Default Configuration',
   provider: 'google',
   model: 'gemini-3-flash',
+  systemInstruction: 'You are Genesis, a creative AI assistant specialized in intelligent orchestration, reasoning, and generating visual content using Web technologies.',
   temperature: 0.7,
-  maxTokens: 4096,
   topP: 0.95,
-  frequencyPenalty: 0,
-  presencePenalty: 0,
-  systemPrompt: 'You are Genesis, a creative AI assistant specialized in generating visual content using p5.js, D3.js, SVG, and Mermaid.js.',
+  topK: 40,
+  maxOutputTokens: 8192,
 };
 
 // Model Pricing (per 1K tokens)

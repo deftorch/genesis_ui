@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/lib/store/settings-store';
 import { useChatStore } from '@/lib/store/chat-store';
 import { useToast } from '@/lib/store/toast-store';
 import { cn } from '@/lib/utils';
+import { PRESET_PROVIDERS } from '@/config/deftorch-presets';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [clearDataModalOpen, setClearDataModalOpen] = React.useState(false);
   const [importModalOpen, setImportModalOpen] = React.useState(false);
   const [importData, setImportData] = React.useState<any>(null);
-  const [geminiKeyInput, setGeminiKeyInput] = React.useState('');
+  const [providerInputs, setProviderInputs] = React.useState<Record<string, string>>({});
   const { preferences, apiKeys, updatePreferences, setTheme, addAPIKey, removeAPIKey, getAPIKey } = useSettingsStore();
   const { chats, importChats } = useChatStore();
   const { success, error } = useToast();
@@ -130,24 +131,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   };
 
-  const handleSaveApiKey = () => {
-    if (!geminiKeyInput.trim()) {
+  const handleSaveApiKey = (providerId: string) => {
+    const key = providerInputs[providerId];
+    if (!key || !key.trim()) {
       error('Invalid Key', 'Please enter a valid API key.');
       return;
     }
     addAPIKey({
-      provider: 'google',
-      key: geminiKeyInput.trim(),
+      provider: providerId,
+      key: key.trim(),
       isActive: true
     });
-    setGeminiKeyInput('');
-    success('API Key Saved', 'Gemini API Key has been configured successfully.');
+    setProviderInputs(prev => ({ ...prev, [providerId]: '' }));
+    success('API Key Saved', `${PRESET_PROVIDERS.find(p => p.id === providerId)?.name} API Key has been configured successfully.`);
   };
 
-  const handleDeleteApiKey = () => {
-    removeAPIKey('google');
-    setGeminiKeyInput('');
-    success('API Key Removed', 'Gemini API Key has been removed.');
+  const handleDeleteApiKey = (providerId: string) => {
+    removeAPIKey(providerId);
+    setProviderInputs(prev => ({ ...prev, [providerId]: '' }));
+    success('API Key Removed', `${PRESET_PROVIDERS.find(p => p.id === providerId)?.name} API Key has been removed.`);
   };
 
   return (
@@ -451,56 +453,64 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </label>
                   </div>
 
-                  {/* Gemini API Key Configuration */}
+                  {/* API Key Configurations */}
                   {(preferences.developerMode) && (
-                    <div className="space-y-4 border rounded-xl p-4 bg-muted/20 border-gray-200 dark:border-white/10">
-                      <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                        <Key className="h-4 w-4 text-[#1a6adf] dark:text-[#60aaff]" />
-                        Gemini API Key
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Add your own Google Gemini API key. This key will be stored locally in your browser and used to make AI calls directly.
-                      </p>
-                      
-                      <div className="flex gap-2">
-                        <Input
-                          type="password"
-                          placeholder={
-                            getAPIKey('google')?.key 
-                              ? "••••••••••••••••••••••••••••••••••••" 
-                              : "Enter Gemini API Key (AIzaSy...)"
-                          }
-                          value={geminiKeyInput}
-                          onChange={(e) => setGeminiKeyInput(e.target.value)}
-                          className="font-mono text-sm"
-                        />
-                        <Button 
-                          onClick={handleSaveApiKey}
-                          className="bg-[#1a6adf] hover:bg-[#1a6adf]/90 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100"
-                        >
-                          Save
-                        </Button>
-                        {getAPIKey('google')?.key && (
-                          <Button 
-                            variant="destructive" 
-                            onClick={handleDeleteApiKey}
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                      
-                      {getAPIKey('google')?.key && (
-                        <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
-                          <span className="font-mono">
-                            Active Key: AIzaSy...{getAPIKey('google')?.key.slice(-4)}
-                          </span>
-                          <span className="flex items-center gap-1 font-semibold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                            Active
-                          </span>
-                        </div>
-                      )}
+                    <div className="space-y-4">
+                      {PRESET_PROVIDERS.map((provider) => {
+                        const activeKey = getAPIKey(provider.id)?.key;
+                        
+                        return (
+                          <div key={provider.id} className="border rounded-xl p-4 bg-muted/20 border-gray-200 dark:border-white/10">
+                            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white mb-2">
+                              <span>{provider.logo}</span>
+                              {provider.name} API Key
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                              {provider.description}. This key will be stored locally.
+                            </p>
+                            
+                            <div className="flex gap-2">
+                              <Input
+                                type="password"
+                                placeholder={
+                                  activeKey
+                                    ? "••••••••••••••••••••••••••••••••••••" 
+                                    : `Enter ${provider.name} API Key`
+                                }
+                                value={providerInputs[provider.id] || ''}
+                                onChange={(e) => setProviderInputs(prev => ({ ...prev, [provider.id]: e.target.value }))}
+                                className="font-mono text-sm"
+                              />
+                              <Button 
+                                onClick={() => handleSaveApiKey(provider.id)}
+                                className="bg-[#1a6adf] hover:bg-[#1a6adf]/90 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100"
+                              >
+                                Save
+                              </Button>
+                              {activeKey && (
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={() => handleDeleteApiKey(provider.id)}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            
+                            {activeKey && (
+                              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 mt-3">
+                                <span className="font-mono truncate mr-2">
+                                  Active Key: {activeKey.slice(0, 4)}...{activeKey.slice(-4)}
+                                </span>
+                                <span className="flex items-center gap-1 font-semibold flex-shrink-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                  Active
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                       
                       <div className="flex items-center justify-between border-t border-gray-200 dark:border-white/10 pt-4 mt-4">
                         <div>

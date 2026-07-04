@@ -20,6 +20,8 @@ import { ProjectsView } from '@/components/chat/views/ProjectsView';
 import { ChatsView } from '@/components/chat/views/ChatsView';
 import { GalleryView } from '@/components/chat/views/GalleryView';
 import { ActiveChatView } from '@/components/chat/views/ActiveChatView';
+import { AnalysisView } from '@/components/chat/views/AnalysisView';
+import { DebugConsoleView } from '@/components/chat/views/DebugConsoleView';
 
 import { useUIStore } from '@/lib/store/ui-store';
 import { useChatStore } from '@/lib/store/chat-store';
@@ -235,6 +237,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <ChatsView sortedChats={sortedChats} />
       ) : ui.currentView === 'gallery' ? (
         <GalleryView />
+      ) : ui.currentView === 'analysis' ? (
+        <AnalysisView />
+      ) : ui.currentView === 'debug' ? (
+        <DebugConsoleView />
       ) : (
         /* Active Chat View */
         <ActiveChatView

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Chat, Message, ModelConfig, Project, Artifact, ImageAttachment } from '@/types';
+import { Chat, Message, ModelConfig, Project, Artifact, ImageAttachment, DebugLog, StreamMetrics } from '@/types';
 import { DEFAULT_MODEL_CONFIG } from '@/config/constants';
 import { generateId } from '@/lib/utils';
 import { generateMessagesSummary, shouldUpdateSummary } from '@/lib/chat-summarizer';
@@ -10,6 +10,8 @@ interface ChatStore {
   currentChatId: string | null;
   projects: Project[];
   artifacts: Artifact[];
+  debugLogs: DebugLog[];
+  currentMetrics: StreamMetrics | null;
   
   createChat: (title?: string) => string;
   deleteChat: (chatId: string) => void;
@@ -42,6 +44,10 @@ interface ChatStore {
   deleteArtifact: (artifactId: string) => void;
   deleteArtifactsForChat: (chatId: string) => void;
   
+  addDebugLog: (log: DebugLog) => void;
+  clearDebugLogs: () => void;
+  setStreamMetrics: (metrics: StreamMetrics | null) => void;
+
   clearAll: () => void;
 }
 
@@ -52,13 +58,15 @@ export const useChatStore = create<ChatStore>()(
       currentChatId: null,
       projects: [],
       artifacts: [],
+      debugLogs: [],
+      currentMetrics: null,
 
       createChat: (title = 'New Chat') => {
         const newChat: Chat = {
           id: generateId(),
           title,
           messages: [],
-          modelConfig: { ...DEFAULT_MODEL_CONFIG, id: generateId() },
+          modelConfig: { ...DEFAULT_MODEL_CONFIG },
           createdAt: new Date(),
           updatedAt: new Date(),
           isStarred: false,
@@ -427,8 +435,22 @@ export const useChatStore = create<ChatStore>()(
         }));
       },
 
+      addDebugLog: (log: DebugLog) => {
+        set((state: ChatStore) => ({
+          debugLogs: [...state.debugLogs, log],
+        }));
+      },
+
+      clearDebugLogs: () => {
+        set({ debugLogs: [] });
+      },
+
+      setStreamMetrics: (metrics: StreamMetrics | null) => {
+        set({ currentMetrics: metrics });
+      },
+
       clearAll: () => {
-        set({ chats: [], currentChatId: null, projects: [], artifacts: [] });
+        set({ chats: [], currentChatId: null, projects: [], artifacts: [], debugLogs: [], currentMetrics: null });
       },
     }),
     {

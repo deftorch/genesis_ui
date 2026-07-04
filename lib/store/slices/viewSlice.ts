@@ -3,7 +3,7 @@ import { UIState } from '../ui-store';
 
 export interface ViewSlice {
   sidebarOpen: boolean;
-  currentView: 'home' | 'chat' | 'chats' | 'gallery' | 'projects';
+  currentView: 'home' | 'chat' | 'chats' | 'gallery' | 'projects' | 'agents' | 'workflows' | 'models' | 'analysis' | 'debug';
   activeChatId: string | null;
   activeProjectId: string | null;
 

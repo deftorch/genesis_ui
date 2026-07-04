@@ -3,7 +3,8 @@ import { useChatStore } from '@/lib/store/chat-store';
 import { useUIStore } from '@/lib/store/ui-store';
 import { extractAllCodes } from '@/lib/extract-code';
 import { parseSSEStream } from '@/lib/sse-parser';
-import { ImageAttachment } from '@/types';
+import { ImageAttachment, ModelConfig } from '@/types';
+import { useSettingsStore } from '@/lib/store/settings-store';
 
 interface UseChatSubmitOptions {
   chatId: string | null;
@@ -111,15 +112,34 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
             content: msg.content,
           }));
 
+      // Add image payloads back to messages if applicable
+      if (imagePayloads.length > 0 && apiMessages.length > 0) {
+        apiMessages[apiMessages.length - 1].attachments = imagePayloads.map(img => ({
+          type: img.mimeType || 'image/jpeg',
+          dataUrl: `data:${img.mimeType || 'image/jpeg'};base64,${img.base64}`
+        }));
+      }
+
+      const settings = useSettingsStore.getState();
+      const providersConfig = {
+        google: { apiKey: settings.apiKeys.find(k => k.provider === 'google')?.key || '' },
+        openai: { apiKey: settings.apiKeys.find(k => k.provider === 'openai')?.key || '' },
+        anthropic: { apiKey: settings.apiKeys.find(k => k.provider === 'anthropic')?.key || '' },
+        groq: { apiKey: settings.apiKeys.find(k => k.provider === 'groq')?.key || '' },
+        deepseek: { apiKey: settings.apiKeys.find(k => k.provider === 'deepseek')?.key || '' },
+        openrouter: { apiKey: settings.apiKeys.find(k => k.provider === 'openrouter')?.key || '' },
+        ollama: { apiKey: settings.apiKeys.find(k => k.provider === 'ollama')?.key || '' },
+      };
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
+          modelId: selectedModel,
           messages: apiMessages,
-          model: selectedModel,
-          currentCode: ui.editableCode || '',
-          images: imagePayloads.length > 0 ? imagePayloads : undefined,
+          config: updatedChat?.modelConfig || { temperature: 0.7 },
+          providersConfig,
         }),
       });
 
@@ -149,6 +169,29 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         (metadata) => {
           if (metadata) {
             finalUsageMetadata = metadata as any;
+          }
+        },
+        (eventData) => {
+          // Handle custom events from Deftorch SSE
+          if (eventData.type === 'debug') {
+            chatStore.addDebugLog({
+              type: 'info',
+              message: eventData.message || '',
+            });
+          } else if (eventData.type === 'ttft' || eventData.type === 'finish') {
+             chatStore.setStreamMetrics({
+               ttft: eventData.type === 'ttft' ? eventData.latency : (chatStore.currentMetrics?.ttft || null),
+               duration: eventData.duration || chatStore.currentMetrics?.duration || null,
+               promptTokens: eventData.usage?.promptTokens || 0,
+               completionTokens: eventData.usage?.completionTokens || 0,
+               totalTokens: eventData.usage?.totalTokens || 0,
+               tokensPerSecond: null
+             });
+          } else if (eventData.type === 'error') {
+            chatStore.addDebugLog({
+              type: 'error',
+              message: eventData.error || 'Unknown error',
+            });
           }
         }
       );
@@ -266,15 +309,33 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
       
       const imagePayloads = newImages ? buildImagePayloads(newImages) : undefined;
 
+      const settings = useSettingsStore.getState();
+      const providersConfig = {
+        google: { apiKey: settings.apiKeys.find(k => k.provider === 'google')?.key || '' },
+        openai: { apiKey: settings.apiKeys.find(k => k.provider === 'openai')?.key || '' },
+        anthropic: { apiKey: settings.apiKeys.find(k => k.provider === 'anthropic')?.key || '' },
+        groq: { apiKey: settings.apiKeys.find(k => k.provider === 'groq')?.key || '' },
+        deepseek: { apiKey: settings.apiKeys.find(k => k.provider === 'deepseek')?.key || '' },
+        openrouter: { apiKey: settings.apiKeys.find(k => k.provider === 'openrouter')?.key || '' },
+        ollama: { apiKey: settings.apiKeys.find(k => k.provider === 'ollama')?.key || '' },
+      };
+
+      if (imagePayloads && imagePayloads.length > 0 && history.length > 0) {
+        (history[history.length - 1] as any).attachments = imagePayloads.map(img => ({
+          type: img.mimeType || 'image/jpeg',
+          dataUrl: `data:${img.mimeType || 'image/jpeg'};base64,${img.base64}`
+        }));
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
+          modelId: selectedModel || 'gemini-3-flash',
           messages: history,
-          model: selectedModel || 'gemini-3-flash',
-          currentCode: hasCodeContext ? ui.editableCode || '' : '',
-          images: imagePayloads && imagePayloads.length > 0 ? imagePayloads : undefined,
+          config: chat.modelConfig || { temperature: 0.7 },
+          providersConfig,
         }),
       });
 
@@ -304,6 +365,23 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         (metadata) => {
           if (metadata) {
             finalUsageMetadata = metadata;
+          }
+        },
+        (eventData) => {
+          if (eventData.type === 'debug') {
+            chatStore.addDebugLog({
+              type: 'info',
+              message: eventData.message || '',
+            });
+          } else if (eventData.type === 'ttft' || eventData.type === 'finish') {
+             chatStore.setStreamMetrics({
+               ttft: eventData.type === 'ttft' ? eventData.latency : (chatStore.currentMetrics?.ttft || null),
+               duration: eventData.duration || chatStore.currentMetrics?.duration || null,
+               promptTokens: eventData.usage?.promptTokens || 0,
+               completionTokens: eventData.usage?.completionTokens || 0,
+               totalTokens: eventData.usage?.totalTokens || 0,
+               tokensPerSecond: null
+             });
           }
         }
       );
