@@ -73,7 +73,7 @@ export const UpgradeModal: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={20} className="text-[#1a6adf] dark:text-[#60aaff]" />
                 <h3 className="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#1a6adf] to-[#8b5cf6] uppercase tracking-wider">
-                  Genesis Pro
+                  Deftorch Pro
                 </h3>
               </div>
               <div className="flex items-baseline gap-1 mb-6">

@@ -224,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </svg>
                 </div>
                 <span className="font-semibold text-lg text-gray-900 dark:text-white">
-                  Genesis
+                  Deftorch
                 </span>
               </div>
               <button
@@ -337,7 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="text-sm text-[#3a6aaa] dark:text-gray-400 px-3 py-6 text-center">
                     <MessageSquare size={20} className="mx-auto mb-2 opacity-30" />
                     <p>No chats yet</p>
-                    <p className="text-xs mt-1">Start a new creation!</p>
+                    <p className="text-xs mt-1">Start a new workspace!</p>
                   </div>
                 ) : (
                   <>
@@ -365,7 +365,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {unstarredChats.length > 0 && (
                       <div>
                         <h3 className="text-xs font-semibold text-[#3a6aaa] dark:text-gray-500 mb-2 px-3 flex items-center gap-1">
-                          <Clock size={12} /> RECENT CREATIONS
+                          <Clock size={12} /> RECENT WORKSPACES
                         </h3>
                         <div className="space-y-1">
                           {unstarredChats.map(c => renderChatItem(c, lastTwoUnstarredIds.includes(c.id)))}

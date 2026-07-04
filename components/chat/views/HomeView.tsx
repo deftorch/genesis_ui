@@ -148,14 +148,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </svg>
           </div>
           <h1 className="font-serif text-3xl md:text-[40px] font-normal tracking-tight text-gray-900 dark:text-white leading-tight">
-            {greeting}, Creator
+            {greeting}, Orchestrator
           </h1>
         </div>
         <p className={cn(
           "hidden md:block text-gray-500 dark:text-[#b8d4ff]/80 text-center max-w-md text-sm leading-relaxed transition-all duration-500 ease-in-out overflow-hidden",
           expandLevel >= 1 ? "opacity-0 max-h-0 m-0" : "opacity-100 max-h-[60px] mb-2"
         )}>
-          Create stunning visual content with AI. Describe what you want, and watch it come to life in real-time.
+          Build intelligent agentic workflows with AI. Describe your goal, and watch the agents execute it in real-time.
         </p>
       </div>
 

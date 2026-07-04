@@ -180,7 +180,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           ) : (
             !ui.sidebarOpen && (
               <span className="text-lg font-semibold text-slate-800 dark:text-white select-none">
-                Genesis
+                Deftorch
               </span>
             )
           )}

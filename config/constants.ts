@@ -9,7 +9,7 @@ export const API_CONFIG = {
   // Note: Free models available after registration
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
   OPENROUTER_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-  OPENROUTER_SITE_NAME: 'Genesis',
+  OPENROUTER_SITE_NAME: 'Deftorch',
 };
 
 // Helper to get all configured Gemini API keys for rotation
@@ -117,7 +117,7 @@ export const AI_MODELS: Record<AIModel, { name: string; provider: AIProvider; co
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
   provider: 'google',
   model: 'gemini-3-flash',
-  systemInstruction: 'You are Genesis, a creative AI assistant specialized in intelligent orchestration, reasoning, and generating visual content using Web technologies.',
+  systemInstruction: 'You are Deftorch, a creative AI assistant specialized in intelligent orchestration, reasoning, and generating visual content using Web technologies.',
   temperature: 0.7,
   topP: 0.95,
   topK: 40,
@@ -157,7 +157,7 @@ export const FILE_UPLOAD_CONFIG = {
 
 // App Constants
 export const APP_CONFIG = {
-  name: 'Genesis',
+  name: 'Deftorch',
   version: '1.0.0',
   description: 'Intelligent AI Chatbot with Image Analysis',
   maxChatHistory: 100,
