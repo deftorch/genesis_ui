@@ -1,4 +1,4 @@
-import { Agent, CompositeModel, ModelInfo, ProviderInfo, PersonaPreset } from '@/types';
+import { Agent, CompositeModel, ModelInfo, ProviderInfo, Workflow } from '@/types';
 
 export const PRESET_PROVIDERS: ProviderInfo[] = [
   { id: 'google', name: 'Google AI Studio', logo: '🤖', description: 'Gemini models', apiKeyEnvVar: 'GEMINI_API_KEY' },
@@ -52,5 +52,47 @@ export const PRESET_AGENTS: Agent[] = [
     useCodeExecution: true,
     useStructuredOutputs: false,
     avatar: '🧮'
+  }
+];
+
+export const PRESET_COMPOSITES: CompositeModel[] = [
+  {
+    id: 'router-basic',
+    name: 'Smart Router (Basic)',
+    description: 'Rute otomatis berdasarkan keyword ke model spesifik (Code -> LLaMA, Default -> GPT-4o)',
+    strategy: 'routing',
+    routerModelId: 'gpt-4o-mini',
+    fallbackModelId: 'gpt-4o',
+    routerRules: [
+      { id: '1', keyword: 'code, python, react', targetModelId: 'llama-3.3-70b-specdec', description: 'Coding tasks' }
+    ],
+    isCustom: false
+  },
+  {
+    id: 'sequential-reviewer',
+    name: 'Draft & Review Pipeline',
+    description: 'Claude 3.5 menulis draft, lalu GPT-4o me-review dan memperbaiki hasilnya.',
+    strategy: 'sequential',
+    steps: [
+      { id: 'step-1', modelId: 'claude-3-5-sonnet', role: 'Drafter', prompt: 'Write a comprehensive draft about the following topic:', temperature: 0.7 },
+      { id: 'step-2', modelId: 'gpt-4o', role: 'Reviewer', prompt: 'Review and improve this draft. Make it professional and concise:', temperature: 0.3 }
+    ],
+    isCustom: false
+  }
+];
+
+export const PRESET_WORKFLOWS: Workflow[] = [
+  {
+    id: 'research-pipeline',
+    name: 'Deep Research Pipeline',
+    description: 'Pipeline otomatis: Terima input -> Cari Web -> Analisis -> Output Laporan',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    nodes: [
+      { id: 'n1', type: 'trigger', title: 'User Input', config: {}, nextNodes: ['n2'], position: { x: 50, y: 150 } },
+      { id: 'n2', type: 'tool', title: 'Web Search', config: { queryTemplate: '{{input}}' }, nextNodes: ['n3'], position: { x: 300, y: 150 } },
+      { id: 'n3', type: 'agent', title: 'Research Analyst', config: { agentId: 'web-researcher' }, nextNodes: ['n4'], position: { x: 550, y: 150 } },
+      { id: 'n4', type: 'output', title: 'Final Report', config: {}, nextNodes: [], position: { x: 800, y: 150 } }
+    ]
   }
 ];

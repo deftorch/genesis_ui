@@ -1,11 +1,13 @@
 import React from 'react';
-import { ChevronDown, Loader2, Paperclip, Send, Square, Layout, Film, Image as ImageIcon, Play, Code, BarChart3, Network, PieChart, Shapes, GitFork, Clock } from 'lucide-react';
+import { ChevronDown, Loader2, Paperclip, Send, Square, Layout, Film, Image as ImageIcon, Play, Code, BarChart3, Network, PieChart, Shapes, GitFork, Clock, Sparkles, Brain, Cpu, Zap, Waves, Globe, Home, Bot } from 'lucide-react';
 import { useUIStore } from '@/lib/store/ui-store';
 import { useSettingsStore } from '@/lib/store/settings-store';
+import { useChatStore } from '@/lib/store/chat-store';
 import { useToast } from '@/lib/store/toast-store';
 import { ChatImagePreview } from '@/components/chat/ChatImagePreview';
 import { AIModel, ImageAttachment } from '@/types';
 import { FILE_UPLOAD_CONFIG, AI_MODELS } from '@/config/constants';
+import { DEFAULT_MODELS, PRESET_PROVIDERS } from '@/config/deftorch-presets';
 import { cn } from '@/lib/utils';
 
 interface HomeViewProps {
@@ -20,6 +22,8 @@ interface HomeViewProps {
   modelDropdownRef: React.RefObject<HTMLDivElement>;
   selectedModel: AIModel;
   setSelectedModel: (model: AIModel) => void;
+  selectedAgent: string | null;
+  setSelectedAgent: (agentId: string | null) => void;
   isModelDropdownOpen: boolean;
   setIsModelDropdownOpen: (isOpen: boolean) => void;
 }
@@ -36,15 +40,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
   modelDropdownRef,
   selectedModel,
   setSelectedModel,
+  selectedAgent,
+  setSelectedAgent,
   isModelDropdownOpen,
   setIsModelDropdownOpen,
 }) => {
   const ui = useUIStore();
+  const chatStore = useChatStore();
   const { preferences } = useSettingsStore();
   const { toast } = useToast();
 
   const [greeting, setGreeting] = React.useState('Welcome back');
   const [expandLevel, setExpandLevel] = React.useState(0);
+  const [isAgentDropdownOpen, setIsAgentDropdownOpen] = React.useState(false);
+  const agentDropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const hrs = new Date().getHours();
@@ -190,7 +199,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {/* Main input card for home view */}
-        <div className="w-full glass-panel rounded-3xl p-4 md:p-5 flex flex-col focus-within:border-[#1a6adf]/45 focus-within:shadow-[0_0_0_3px_rgba(26,106,223,0.10)] dark:focus-within:border-white/20 dark:focus-within:shadow-none transition-all duration-200">
+        <div className="w-full glass-panel rounded-2xl p-4 flex flex-col focus-within:border-[#1a6adf]/45 focus-within:shadow-[0_0_0_3px_rgba(26,106,223,0.10)] dark:focus-within:border-white/20 dark:focus-within:shadow-none transition-all duration-200 shadow-sm">
           <ChatImagePreview 
             images={attachedImages} 
             onRemoveImage={removeAttachedImage} 
@@ -212,12 +221,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
             rows={1}
             ref={chatInputRef}
           />
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1e468c]/12 dark:border-white/5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#1e468c]/12 dark:border-white/5">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading || isUploading || attachedImages.length >= FILE_UPLOAD_CONFIG.maxFiles}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
                 title="Attach image"
               >
                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Paperclip size={16} />}
@@ -230,46 +239,118 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="relative" ref={modelDropdownRef}>
+              {/* Agent Selector */}
+              <div className="relative" ref={agentDropdownRef}>
                 <button
-                  onClick={() => {
-                    if (!preferences.developerMode) {
-                      toast({
-                        title: 'Developer Mode Required',
-                        description: 'Enable Developer Mode to select a model.',
-                        variant: 'destructive',
-                      });
-                      return;
-                    }
-                    setIsModelDropdownOpen(!isModelDropdownOpen);
-                  }}
+                  onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
                   disabled={isLoading}
                   className="flex items-center gap-1 bg-transparent hover:bg-[#1a6adf]/10 dark:hover:bg-white/10 rounded-lg py-1 px-2.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0a1628] dark:hover:text-white transition-colors cursor-pointer font-medium disabled:opacity-50"
                 >
                   <span>
-                    {preferences.developerMode
-                      ? AI_MODELS[selectedModel]?.name || selectedModel
-                      : 'Auto'}
+                    {selectedAgent 
+                      ? <><Bot size={12} className="text-[#1a6adf] dark:text-[#60aaff]" /> {chatStore.agents.find(a => a.id === selectedAgent)?.name || selectedAgent}</>
+                      : 'No Agent'}
+                  </span>
+                  <ChevronDown size={12} className={`stroke-[2] transition-transform ${isAgentDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isAgentDropdownOpen && (
+                  <div className="absolute bottom-full left-0 mb-2 w-48 max-h-[50vh] overflow-y-auto bg-white dark:bg-[#151121] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in custom-scrollbar">
+                    <button
+                      onClick={() => { setSelectedAgent(null); setIsAgentDropdownOpen(false); }}
+                      className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${!selectedAgent ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                    >
+                      No Agent (Standard)
+                    </button>
+                    <div className="my-1 border-b border-gray-100 dark:border-white/5" />
+                    {chatStore.agents.map(agent => (
+                      <button
+                        key={agent.id}
+                        onClick={() => {
+                          setSelectedAgent(agent.id);
+                          if (agent.modelId) setSelectedModel(agent.modelId);
+                          setIsAgentDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center gap-2 text-xs cursor-pointer ${selectedAgent === agent.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                      >
+                        <Bot size={14} className={selectedAgent === agent.id ? "text-[#1a6adf] dark:text-[#60aaff]" : "text-gray-400"} />
+                        <span className="truncate">{agent.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="w-px h-3 bg-gray-300 dark:bg-gray-700" />
+
+              {/* Model Selector */}
+              <div className="relative" ref={modelDropdownRef}>
+                <button
+                  onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                  disabled={isLoading}
+                  className="flex items-center gap-1 bg-transparent hover:bg-[#1a6adf]/10 dark:hover:bg-white/10 rounded-lg py-1 px-2.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0a1628] dark:hover:text-white transition-colors cursor-pointer font-medium disabled:opacity-50"
+                >
+                  <span>
+                    {chatStore.compositeModels?.find(m => m.id === selectedModel)?.name || DEFAULT_MODELS.find(m => m.id === selectedModel)?.name || selectedModel || 'Select Model'}
                   </span>
                   <ChevronDown size={12} className={`stroke-[2] transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isModelDropdownOpen && (
-                  <div className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-[#151121] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in">
-                    <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1">
-                      Select Model
-                    </div>
-                    {Object.entries(AI_MODELS).map(([modelId, m]) => (
-                      <button
-                        key={modelId}
-                        onClick={() => {
-                          setSelectedModel(modelId as AIModel);
-                          setIsModelDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === modelId ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-                      >
-                        <span>{m.name}</span>
-                      </button>
-                    ))}
+                  <div className="absolute bottom-full left-0 mb-2 w-64 max-h-[60vh] overflow-y-auto bg-white dark:bg-[#151121] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in custom-scrollbar">
+                    
+                    {/* Composite Models Section */}
+                    {chatStore.compositeModels && chatStore.compositeModels.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-3 py-1 text-[10px] font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1 flex items-center gap-1">
+                          <Network size={10} /> Composite (Pipelines)
+                        </div>
+                        {chatStore.compositeModels.map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => {
+                              setSelectedModel(m.id as AIModel);
+                              setIsModelDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === m.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                          >
+                            <span>{m.name}</span>
+                            <span className="text-[9px] text-gray-400 capitalize">{m.strategy}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {PRESET_PROVIDERS.map(provider => {
+                      const providerModels = DEFAULT_MODELS.filter(m => m.providerId === provider.id);
+                      if (providerModels.length === 0) return null;
+                      
+                      return (
+                        <div key={provider.id} className="mb-2 last:mb-0">
+                          <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1 flex items-center gap-1.5">
+                            {provider.id === 'google' && <Sparkles size={12} className="text-blue-500" />}
+                            {provider.id === 'openai' && <Brain size={12} className="text-green-500" />}
+                            {provider.id === 'anthropic' && <Cpu size={12} className="text-purple-500" />}
+                            {provider.id === 'groq' && <Zap size={12} className="text-orange-500" />}
+                            {provider.id === 'deepseek' && <Waves size={12} className="text-blue-400" />}
+                            {provider.id === 'openrouter' && <Globe size={12} className="text-indigo-400" />}
+                            {provider.id === 'ollama' && <Home size={12} className="text-gray-500" />}
+                            {['google', 'openai', 'anthropic', 'groq', 'deepseek', 'openrouter', 'ollama'].indexOf(provider.id) === -1 && <Bot size={12} className="text-gray-400" />}
+                            {provider.name}
+                          </div>
+                          {providerModels.map((m) => (
+                            <button
+                              key={m.id}
+                              onClick={() => {
+                                setSelectedModel(m.id as AIModel);
+                                setIsModelDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === m.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                            >
+                              <span>{m.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

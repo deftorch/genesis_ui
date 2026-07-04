@@ -21,6 +21,7 @@ import {
   Box,
   LineChart,
   Terminal,
+  MoreVertical,
 } from 'lucide-react';
 
 import { useUIStore } from '@/lib/store/ui-store';
@@ -47,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(true);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const startRename = (chatId: string, currentTitle: string) => {
     setRenamingChatId(chatId);
@@ -376,30 +378,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Footer - Account & Settings */}
-            <div className="border-t border-gray-200 dark:border-white/10 pt-3 flex flex-col gap-2 mt-auto">
-              
-              <div className="flex flex-col gap-1 mb-2">
-                <button
-                  onClick={() => {
-                    ui.setCurrentView('analysis');
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'analysis' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
-                >
-                  <LineChart size={18} />
-                  <span>Analysis</span>
-                </button>
-                <button
-                  onClick={() => {
-                    ui.setCurrentView('debug');
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'debug' ? 'bg-[#1a6adf]/18 dark:bg-white/10 font-medium text-[#0a1628] dark:text-white shadow-sm' : 'text-[#3a6aaa] hover:text-[#0a1628] hover:bg-[#1a6adf]/14 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5'}`}
-                >
-                  <Terminal size={18} />
-                  <span>Debug Console</span>
-                </button>
-              </div>
+            <div className="border-t border-gray-200 dark:border-white/10 pt-3 mt-auto relative">
+              {isUserMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsUserMenuOpen(false)} />
+                  <div className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-white dark:bg-[#1a1525] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in p-1">
+                    <button
+                      onClick={() => {
+                        ui.setCurrentView('analysis');
+                        setIsUserMenuOpen(false);
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'analysis' ? 'bg-[#1a6adf]/10 dark:bg-white/10 font-medium text-[#1a6adf] dark:text-white' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'}`}
+                    >
+                      <LineChart size={16} />
+                      <span>Analysis</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        ui.setCurrentView('debug');
+                        setIsUserMenuOpen(false);
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer ${ui.currentView === 'debug' ? 'bg-[#1a6adf]/10 dark:bg-white/10 font-medium text-[#1a6adf] dark:text-white' : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'}`}
+                    >
+                      <Terminal size={16} />
+                      <span>Debug Console</span>
+                    </button>
+                    <div className="my-1 border-t border-gray-100 dark:border-white/10" />
+                    <button
+                      onClick={() => {
+                        ui.setIsSettingsOpen(true);
+                        setIsUserMenuOpen(false);
+                        if (typeof window !== 'undefined' && window.innerWidth < 768) ui.setSidebarOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm cursor-pointer text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                    >
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </button>
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -416,16 +436,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
                 <button
-                  onClick={() => {
-                    ui.setIsSettingsOpen(true);
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                      ui.setSidebarOpen(false);
-                    }
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-all cursor-pointer flex-shrink-0"
-                  title="Settings"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer flex-shrink-0 ${isUserMenuOpen ? 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                  title="More Options"
                 >
-                  <Settings size={18} />
+                  <MoreVertical size={18} />
                 </button>
               </div>
             </div>

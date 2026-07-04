@@ -36,6 +36,7 @@ const GenesisApp = () => {
   >([]);
 
   const [selectedModel, setSelectedModel] = useState<AIModel>('gemini-3-flash');
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -93,11 +94,14 @@ const GenesisApp = () => {
         if (chat.modelConfig?.model) {
           setSelectedModel(chat.modelConfig.model as AIModel);
         }
+        setSelectedAgent(chat.agentId || null);
       } else {
         setMessages([]);
+        setSelectedAgent(null);
       }
     } else {
       setMessages([]);
+      setSelectedAgent(null);
     }
   }, [ui.activeChatId, chatStore.chats]);
 
@@ -110,6 +114,7 @@ const GenesisApp = () => {
   const { submit: chatSubmit, isLoading, stopGeneration, regeneratingId, handleRegenerateFrom } = useChatSubmit({
     chatId: ui.activeChatId,
     selectedModel,
+    selectedAgent,
   });
 
   const onSendMessage = async (customPrompt?: string) => {
@@ -325,6 +330,8 @@ const GenesisApp = () => {
           chatInputRef={chatInputRef}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
+          selectedAgent={selectedAgent}
+          setSelectedAgent={setSelectedAgent}
           codeVersions={codeVersions}
           regeneratingId={regeneratingId}
           onRegenerate={handleRegenerateMessage}

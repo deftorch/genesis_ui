@@ -9,9 +9,10 @@ import { useSettingsStore } from '@/lib/store/settings-store';
 interface UseChatSubmitOptions {
   chatId: string | null;
   selectedModel: string;
+  selectedAgent?: string | null;
 }
 
-export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
+export function useChatSubmit({ chatId, selectedModel, selectedAgent }: UseChatSubmitOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -82,6 +83,14 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         : messageToSend;
       currentChatId = chatStore.createChat(title);
       chatStore.updateModelConfig(currentChatId, { model: selectedModel as any });
+      
+      // Also update agentId if provided
+      if (selectedAgent) {
+        useChatStore.setState(state => ({
+          chats: state.chats.map(c => c.id === currentChatId ? { ...c, agentId: selectedAgent } : c)
+        }));
+      }
+
       ui.setActiveChatId(currentChatId);
     }
 
@@ -112,6 +121,41 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
             content: msg.content,
           }));
 
+      // Inject Agent System Instruction if selected
+      let finalConfig = updatedChat?.modelConfig || { temperature: 0.7 };
+      if (selectedAgent) {
+        const agent = latestChatStore.agents.find(a => a.id === selectedAgent);
+        if (agent) {
+          // Prepend system instruction if not already there
+          if (apiMessages.length === 0 || apiMessages[0].role !== 'system') {
+            apiMessages.unshift({
+              role: 'system',
+              content: agent.systemInstruction,
+            } as any);
+          } else {
+            apiMessages[0].content = agent.systemInstruction;
+          }
+
+          // Override config with agent parameters
+          finalConfig = {
+            ...finalConfig,
+            temperature: agent.temperature,
+            useCodeExecution: agent.useCodeExecution,
+            useSearchGrounding: agent.useSearchGrounding,
+            useStructuredOutputs: agent.useStructuredOutputs,
+          };
+        }
+      }
+
+      // Check if selectedModel is a composite model
+      const compositeModel = latestChatStore.compositeModels?.find(m => m.id === selectedModel);
+      if (compositeModel) {
+        finalConfig = {
+          ...finalConfig,
+          compositeModel,
+        };
+      }
+
       // Add image payloads back to messages if applicable
       if (imagePayloads.length > 0 && apiMessages.length > 0) {
         apiMessages[apiMessages.length - 1].attachments = imagePayloads.map(img => ({
@@ -138,7 +182,7 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         body: JSON.stringify({
           modelId: selectedModel,
           messages: apiMessages,
-          config: updatedChat?.modelConfig || { temperature: 0.7 },
+          config: finalConfig,
           providersConfig,
         }),
       });
@@ -327,6 +371,38 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         }));
       }
 
+      // Inject Agent System Instruction if selected
+      let finalConfig = chat.modelConfig || { temperature: 0.7 };
+      if (selectedAgent) {
+        const agent = chatStore.agents.find(a => a.id === selectedAgent);
+        if (agent) {
+          if (history.length === 0 || history[0].role !== 'system') {
+            history.unshift({
+              role: 'system',
+              content: agent.systemInstruction,
+            } as any);
+          } else {
+            history[0].content = agent.systemInstruction;
+          }
+
+          finalConfig = {
+            ...finalConfig,
+            temperature: agent.temperature,
+            useCodeExecution: agent.useCodeExecution,
+            useSearchGrounding: agent.useSearchGrounding,
+            useStructuredOutputs: agent.useStructuredOutputs,
+          };
+        }
+      }
+
+      const compositeModel = chatStore.compositeModels?.find(m => m.id === selectedModel);
+      if (compositeModel) {
+        finalConfig = {
+          ...finalConfig,
+          compositeModel,
+        };
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -334,7 +410,7 @@ export function useChatSubmit({ chatId, selectedModel }: UseChatSubmitOptions) {
         body: JSON.stringify({
           modelId: selectedModel || 'gemini-3-flash',
           messages: history,
-          config: chat.modelConfig || { temperature: 0.7 },
+          config: finalConfig,
           providersConfig,
         }),
       });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Chat, Message, ModelConfig, Project, Artifact, ImageAttachment, DebugLog, StreamMetrics } from '@/types';
+import { Chat, Message, ModelConfig, Project, Artifact, ImageAttachment, DebugLog, StreamMetrics, Agent, CompositeModel, Workflow } from '@/types';
+import { PRESET_AGENTS, PRESET_COMPOSITES, PRESET_WORKFLOWS } from '@/config/deftorch-presets';
 import { DEFAULT_MODEL_CONFIG } from '@/config/constants';
 import { generateId } from '@/lib/utils';
 import { generateMessagesSummary, shouldUpdateSummary } from '@/lib/chat-summarizer';
@@ -12,6 +13,9 @@ interface ChatStore {
   artifacts: Artifact[];
   debugLogs: DebugLog[];
   currentMetrics: StreamMetrics | null;
+  agents: Agent[];
+  compositeModels: CompositeModel[];
+  workflows: Workflow[];
   
   createChat: (title?: string) => string;
   deleteChat: (chatId: string) => void;
@@ -38,6 +42,18 @@ interface ChatStore {
   
   updateModelConfig: (chatId: string, config: Partial<ModelConfig>) => void;
   
+  addAgent: (agent: Agent) => void;
+  updateAgent: (id: string, agent: Partial<Agent>) => void;
+  deleteAgent: (id: string) => void;
+
+  addCompositeModel: (model: CompositeModel) => void;
+  updateCompositeModel: (id: string, model: Partial<CompositeModel>) => void;
+  deleteCompositeModel: (id: string) => void;
+
+  addWorkflow: (workflow: Workflow) => void;
+  updateWorkflow: (id: string, workflow: Partial<Workflow>) => void;
+  deleteWorkflow: (id: string) => void;
+
   searchChats: (query: string) => Chat[];
   
   addArtifact: (artifact: Omit<Artifact, 'id' | 'createdAt'>) => void;
@@ -60,6 +76,9 @@ export const useChatStore = create<ChatStore>()(
       artifacts: [],
       debugLogs: [],
       currentMetrics: null,
+      agents: PRESET_AGENTS,
+      compositeModels: PRESET_COMPOSITES,
+      workflows: PRESET_WORKFLOWS,
 
       createChat: (title = 'New Chat') => {
         const newChat: Chat = {
@@ -423,6 +442,75 @@ export const useChatStore = create<ChatStore>()(
         }));
       },
 
+      // --- Agent Actions ---
+      addAgent: (agent: Agent) => {
+        set((state: ChatStore) => ({
+          agents: [...state.agents, agent],
+        }));
+      },
+
+      updateAgent: (id: string, agentData: Partial<Agent>) => {
+        set((state: ChatStore) => ({
+          agents: state.agents.map((a: Agent) =>
+            a.id === id ? { ...a, ...agentData } : a
+          ),
+        }));
+      },
+
+      deleteAgent: (id: string) => {
+        set((state: ChatStore) => ({
+          agents: state.agents.filter((a: Agent) => a.id !== id),
+          chats: state.chats.map((c: Chat) =>
+            c.agentId === id ? { ...c, agentId: undefined } : c
+          ),
+        }));
+      },
+
+      // --- Composite Models Actions ---
+      addCompositeModel: (model: CompositeModel) => {
+        set((state: ChatStore) => ({
+          compositeModels: [...state.compositeModels, model]
+        }));
+      },
+
+      updateCompositeModel: (id: string, modelData: Partial<CompositeModel>) => {
+        set((state: ChatStore) => ({
+          compositeModels: state.compositeModels.map((m: CompositeModel) =>
+            m.id === id ? { ...m, ...modelData } : m
+          )
+        }));
+      },
+
+      deleteCompositeModel: (id: string) => {
+        set((state: ChatStore) => ({
+          compositeModels: state.compositeModels.filter((m: CompositeModel) => m.id !== id),
+          chats: state.chats.map((c: Chat) =>
+            c.compositeModelId === id ? { ...c, compositeModelId: undefined } : c
+          )
+        }));
+      },
+
+      // --- Workflows Actions ---
+      addWorkflow: (workflow: Workflow) => {
+        set((state: ChatStore) => ({
+          workflows: [...state.workflows, workflow]
+        }));
+      },
+
+      updateWorkflow: (id: string, workflowData: Partial<Workflow>) => {
+        set((state: ChatStore) => ({
+          workflows: state.workflows.map((w: Workflow) =>
+            w.id === id ? { ...w, ...workflowData, updatedAt: new Date() } : w
+          )
+        }));
+      },
+
+      deleteWorkflow: (id: string) => {
+        set((state: ChatStore) => ({
+          workflows: state.workflows.filter((w: Workflow) => w.id !== id)
+        }));
+      },
+
       deleteArtifact: (artifactId: string) => {
         set((state: ChatStore) => ({
           artifacts: state.artifacts.filter((a: Artifact) => a.id !== artifactId),
@@ -508,12 +596,24 @@ export const useChatStore = create<ChatStore>()(
           createdAt: new Date(a.createdAt),
         }));
         
+        // Parse agents (use preset if missing)
+        const agents = persistedState.agents || PRESET_AGENTS;
+        const compositeModels = persistedState.compositeModels || PRESET_COMPOSITES;
+        const workflows = persistedState.workflows ? persistedState.workflows.map((w: any) => ({
+          ...w,
+          createdAt: new Date(w.createdAt),
+          updatedAt: new Date(w.updatedAt),
+        })) : PRESET_WORKFLOWS;
+
         return {
           ...currentState,
           ...persistedState,
           chats,
           projects,
           artifacts,
+          agents,
+          compositeModels,
+          workflows,
         };
       },
     }

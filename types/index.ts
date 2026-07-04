@@ -109,6 +109,25 @@ export interface CompositeModel {
   aggregatorModelId?: string;
 }
 
+// --- Deftorch Workflows ---
+export interface WorkflowNode {
+  id: string;
+  type: 'trigger' | 'agent' | 'tool' | 'condition' | 'output';
+  title: string;
+  config: Record<string, any>;
+  nextNodes: string[];
+  position?: { x: number; y: number };
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  nodes: WorkflowNode[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // --- Genesis & Deftorch Unified Message ---
 export interface Attachment {
   name: string;

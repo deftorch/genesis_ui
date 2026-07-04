@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Settings2, Key, Palette, Shield, Download, Upload, Sparkles, Sun, Moon, Laptop, AlertTriangle } from 'lucide-react';
+import { X, Settings2, Key, Palette, Shield, Download, Upload, Sparkles, Sun, Moon, Laptop, AlertTriangle, Bot, Brain, Cpu, Zap, Waves, Globe, Home } from 'lucide-react';
 import { Modal, ModalHeader, ModalContent } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -462,7 +462,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         return (
                           <div key={provider.id} className="border rounded-xl p-4 bg-muted/20 border-gray-200 dark:border-white/10">
                             <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white mb-2">
-                              <span>{provider.logo}</span>
+                              <span>
+                                {provider.id === 'google' && <Sparkles className="h-5 w-5 text-blue-500" />}
+                                {provider.id === 'openai' && <Brain className="h-5 w-5 text-green-500" />}
+                                {provider.id === 'anthropic' && <Cpu className="h-5 w-5 text-purple-500" />}
+                                {provider.id === 'groq' && <Zap className="h-5 w-5 text-orange-500" />}
+                                {provider.id === 'deepseek' && <Waves className="h-5 w-5 text-blue-400" />}
+                                {provider.id === 'openrouter' && <Globe className="h-5 w-5 text-indigo-400" />}
+                                {provider.id === 'ollama' && <Home className="h-5 w-5 text-gray-500" />}
+                                {['google', 'openai', 'anthropic', 'groq', 'deepseek', 'openrouter', 'ollama'].indexOf(provider.id) === -1 && <Bot className="h-5 w-5 text-gray-400" />}
+                              </span>
                               {provider.name} API Key
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">

@@ -22,6 +22,9 @@ import { GalleryView } from '@/components/chat/views/GalleryView';
 import { ActiveChatView } from '@/components/chat/views/ActiveChatView';
 import { AnalysisView } from '@/components/chat/views/AnalysisView';
 import { DebugConsoleView } from '@/components/chat/views/DebugConsoleView';
+import { AgentsView } from '@/components/chat/views/AgentsView';
+import { ModelsView } from '@/components/chat/views/ModelsView';
+import { WorkflowsView } from '@/components/chat/views/WorkflowsView';
 
 import { useUIStore } from '@/lib/store/ui-store';
 import { useChatStore } from '@/lib/store/chat-store';
@@ -41,6 +44,8 @@ interface ChatPanelProps {
   chatInputRef: React.RefObject<HTMLTextAreaElement>;
   selectedModel: AIModel;
   setSelectedModel: (model: AIModel) => void;
+  selectedAgent: string | null;
+  setSelectedAgent: (agentId: string | null) => void;
   codeVersions: any[];
   regeneratingId: string | null;
   onRegenerate: (messageId: string) => void;
@@ -58,6 +63,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   chatInputRef,
   selectedModel,
   setSelectedModel,
+  selectedAgent,
+  setSelectedAgent,
   codeVersions,
   regeneratingId,
   onRegenerate,
@@ -225,6 +232,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           modelDropdownRef={modelDropdownRef}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
+          selectedAgent={selectedAgent}
+          setSelectedAgent={setSelectedAgent}
           isModelDropdownOpen={isModelDropdownOpen}
           setIsModelDropdownOpen={setIsModelDropdownOpen}
         />
@@ -241,6 +250,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <AnalysisView />
       ) : ui.currentView === 'debug' ? (
         <DebugConsoleView />
+      ) : ui.currentView === 'agents' ? (
+        <AgentsView />
+      ) : ui.currentView === 'models' ? (
+        <ModelsView />
+      ) : ui.currentView === 'workflows' ? (
+        <WorkflowsView />
       ) : (
         /* Active Chat View */
         <ActiveChatView
@@ -261,6 +276,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           modelDropdownRef={modelDropdownRef}
           selectedModel={selectedModel}
           setSelectedModel={setSelectedModel}
+          selectedAgent={selectedAgent}
+          setSelectedAgent={setSelectedAgent}
           isModelDropdownOpen={isModelDropdownOpen}
           setIsModelDropdownOpen={setIsModelDropdownOpen}
         />
