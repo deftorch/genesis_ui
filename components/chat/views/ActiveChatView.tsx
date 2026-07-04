@@ -235,6 +235,28 @@ export const ActiveChatView: React.FC<ActiveChatViewProps> = ({
                         </div>
                       )}
 
+                      {/* Workflows Section */}
+                      {chatStore.workflows && chatStore.workflows.length > 0 && (
+                        <div className="mb-2">
+                          <div className="px-3 py-1 text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1 flex items-center gap-1">
+                            <Network size={10} /> Workflows
+                          </div>
+                          {chatStore.workflows.map((wf) => (
+                            <button
+                              key={wf.id}
+                              onClick={() => {
+                                setSelectedModel(wf.id as AIModel);
+                                setIsModelDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === wf.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                            >
+                              <span>{wf.name}</span>
+                              <span className="text-[9px] text-gray-400">{wf.nodes.length} nodes</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {PRESET_PROVIDERS.map(provider => {
                         const providerModels = DEFAULT_MODELS.filter(m => m.providerId === provider.id);
                         if (providerModels.length === 0) return null;

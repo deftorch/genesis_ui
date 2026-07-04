@@ -148,14 +148,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </svg>
           </div>
           <h1 className="font-serif text-3xl md:text-[40px] font-normal tracking-tight text-gray-900 dark:text-white leading-tight">
-            {greeting}, Orchestrator
+            {greeting}, Deft
           </h1>
         </div>
         <p className={cn(
           "hidden md:block text-gray-500 dark:text-[#b8d4ff]/80 text-center max-w-md text-sm leading-relaxed transition-all duration-500 ease-in-out overflow-hidden",
           expandLevel >= 1 ? "opacity-0 max-h-0 m-0" : "opacity-100 max-h-[60px] mb-2"
         )}>
-          Build intelligent agentic workflows with AI. Describe your goal, and watch the agents execute it in real-time.
+          Mastering the Art of AI Orchestration.
         </p>
       </div>
 
@@ -290,7 +290,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   className="flex items-center gap-1 bg-transparent hover:bg-[#1a6adf]/10 dark:hover:bg-white/10 rounded-lg py-1 px-2.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0a1628] dark:hover:text-white transition-colors cursor-pointer font-medium disabled:opacity-50"
                 >
                   <span>
-                    {chatStore.compositeModels?.find(m => m.id === selectedModel)?.name || DEFAULT_MODELS.find(m => m.id === selectedModel)?.name || selectedModel || 'Select Model'}
+                    {chatStore.compositeModels?.find(m => m.id === selectedModel)?.name || chatStore.workflows.find(w => w.id === selectedModel)?.name || DEFAULT_MODELS.find(m => m.id === selectedModel)?.name || selectedModel || 'Select Model'}
                   </span>
                   <ChevronDown size={12} className={`stroke-[2] transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -314,6 +314,28 @@ export const HomeView: React.FC<HomeViewProps> = ({
                           >
                             <span>{m.name}</span>
                             <span className="text-[9px] text-gray-400 capitalize">{m.strategy}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Workflows Section */}
+                    {chatStore.workflows && chatStore.workflows.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-3 py-1 text-[10px] font-semibold text-pink-600 dark:text-pink-400 uppercase tracking-wider border-b border-gray-100 dark:border-white/5 mb-1 flex items-center gap-1">
+                          <Network size={10} /> Workflows
+                        </div>
+                        {chatStore.workflows.map((wf) => (
+                          <button
+                            key={wf.id}
+                            onClick={() => {
+                              setSelectedModel(wf.id as AIModel);
+                              setIsModelDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-xs cursor-pointer ${selectedModel === wf.id ? 'text-[#1a6adf] dark:text-[#60aaff] font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                          >
+                            <span>{wf.name}</span>
+                            <span className="text-[9px] text-gray-400">{wf.nodes.length} nodes</span>
                           </button>
                         ))}
                       </div>

@@ -49,6 +49,10 @@ export const parseSSEStream = async (
               if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
               const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
               if (textChunk) onChunk(textChunk);
+            } else if (eventData.choices) {
+              // OpenAI / OpenRouter format
+              const textChunk = eventData.choices?.[0]?.delta?.content;
+              if (textChunk) onChunk(textChunk);
             }
           } catch (e) {
             // Abaikan JSON yang tidak valid
@@ -76,6 +80,9 @@ export const parseSSEStream = async (
         } else if (eventData.candidates) {
           if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
           const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textChunk) onChunk(textChunk);
+        } else if (eventData.choices) {
+          const textChunk = eventData.choices?.[0]?.delta?.content;
           if (textChunk) onChunk(textChunk);
         }
       }

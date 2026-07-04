@@ -147,13 +147,21 @@ export function useChatSubmit({ chatId, selectedModel, selectedAgent }: UseChatS
         }
       }
 
-      // Check if selectedModel is a composite model
+      // Check if selectedModel is a composite model or workflow
       const compositeModel = latestChatStore.compositeModels?.find(m => m.id === selectedModel);
       if (compositeModel) {
         finalConfig = {
           ...finalConfig,
           compositeModel,
         };
+      } else {
+        const workflow = latestChatStore.workflows?.find(w => w.id === selectedModel);
+        if (workflow) {
+          finalConfig = {
+            ...finalConfig,
+            workflow,
+          };
+        }
       }
 
       // Add image payloads back to messages if applicable
@@ -401,6 +409,14 @@ export function useChatSubmit({ chatId, selectedModel, selectedAgent }: UseChatS
           ...finalConfig,
           compositeModel,
         };
+      } else {
+        const workflow = chatStore.workflows?.find(w => w.id === selectedModel);
+        if (workflow) {
+          finalConfig = {
+            ...finalConfig,
+            workflow,
+          };
+        }
       }
 
       const response = await fetch('/api/chat', {
