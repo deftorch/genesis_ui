@@ -1,5 +1,6 @@
 import dns from 'dns';
 import { promisify } from 'util';
+import { Agent, fetch as undiciFetch } from 'undici';
 
 const lookup = promisify(dns.lookup);
 
@@ -86,4 +87,44 @@ export async function isSafeUrl(urlStr: string): Promise<boolean> {
     // If parsing fails or DNS fails, treat as unsafe
     return false;
   }
+}
+
+/**
+ * Safely fetch a URL by preventing DNS rebinding (TOCTOU).
+ * It resolves the IP once, validates it, and forces the HTTP client to use that exact IP.
+ */
+export async function safeFetch(urlStr: string, options?: any): Promise<Response> {
+  const parsedUrl = new URL(urlStr);
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new Error('Unsupported protocol');
+  }
+
+  const hostname = parsedUrl.hostname;
+
+  let ip = hostname;
+  if (!(/^[0-9.]+$/.test(hostname) || hostname.includes(':'))) {
+    try {
+      const lookupResult = await lookup(hostname);
+      ip = lookupResult.address;
+    } catch (err) {
+      throw new Error('Failed to resolve hostname');
+    }
+  }
+
+  if (isPrivateIp(ip)) {
+    throw new Error('Unsafe or private IP address resolved');
+  }
+
+  // Create a custom dispatcher that forces connection to the validated IP
+  const agent = new Agent({
+    connect: {
+      lookup: (host, opts, callback) => {
+        // Bypass normal DNS resolution and use the IP we just validated
+        callback(null, [{ address: ip, family: ip.includes(':') ? 6 : 4 }]);
+      },
+    },
+  });
+
+  return undiciFetch(urlStr, { ...options, dispatcher: agent }) as unknown as Promise<Response>;
 }

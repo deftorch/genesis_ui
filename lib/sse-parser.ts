@@ -47,8 +47,20 @@ export const parseSSEStream = async (
             } else if (eventData.candidates) {
               // Legacy fallback for native Gemini stream
               if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
-              const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (textChunk) onChunk(textChunk);
+              const parts = eventData.candidates?.[0]?.content?.parts || [];
+              let combinedText = '';
+              for (const part of parts) {
+                if (part.text) {
+                  combinedText += part.text;
+                }
+                if (part.executableCode) {
+                  combinedText += `\n\`\`\`python\n// Executing code...\n${part.executableCode.code}\n\`\`\`\n`;
+                }
+                if (part.codeExecutionResult) {
+                  combinedText += `\n\`\`\`\n// Execution result:\n${part.codeExecutionResult.output}\n\`\`\`\n`;
+                }
+              }
+              if (combinedText) onChunk(combinedText);
             } else if (eventData.choices) {
               // OpenAI / OpenRouter format
               const textChunk = eventData.choices?.[0]?.delta?.content;
@@ -79,8 +91,20 @@ export const parseSSEStream = async (
           };
         } else if (eventData.candidates) {
           if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
-          const textChunk = eventData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (textChunk) onChunk(textChunk);
+          const parts = eventData.candidates?.[0]?.content?.parts || [];
+          let combinedText = '';
+          for (const part of parts) {
+            if (part.text) {
+              combinedText += part.text;
+            }
+            if (part.executableCode) {
+              combinedText += `\n\`\`\`python\n// Executing code...\n${part.executableCode.code}\n\`\`\`\n`;
+            }
+            if (part.codeExecutionResult) {
+              combinedText += `\n\`\`\`\n// Execution result:\n${part.codeExecutionResult.output}\n\`\`\`\n`;
+            }
+          }
+          if (combinedText) onChunk(combinedText);
         } else if (eventData.choices) {
           const textChunk = eventData.choices?.[0]?.delta?.content;
           if (textChunk) onChunk(textChunk);

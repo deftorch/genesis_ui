@@ -314,7 +314,15 @@ export async function POST(req: Request) {
         };
       });
 
-      const requestBody = {
+      const tools: any[] = [];
+      if (config?.useSearchGrounding) {
+        tools.push({ googleSearch: {} });
+      }
+      if (config?.useCodeExecution) {
+        tools.push({ codeExecution: {} });
+      }
+
+      const requestBody: any = {
         contents,
         systemInstruction: {
           parts: [
@@ -330,6 +338,10 @@ export async function POST(req: Request) {
           maxOutputTokens: 65536,
         },
       };
+
+      if (tools.length > 0) {
+        requestBody.tools = tools;
+      }
 
       // Map model names to Gemini API model IDs
       const modelIdMap: Record<string, string> = {

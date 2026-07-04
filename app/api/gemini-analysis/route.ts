@@ -66,21 +66,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate URL to prevent SSRF
-    const { isSafeUrl } = await import('@/lib/ssrf-guard');
-    if (!(await isSafeUrl(imageUrl))) {
-      return NextResponse.json(
-        { error: 'Unsafe or invalid image URL provided' },
-        { status: 400 }
-      );
-    }
-
+    // Validate URL and fetch safely to prevent SSRF and DNS rebinding
+    const { safeFetch } = await import('@/lib/ssrf-guard');
+    
     // Fetch the image and convert to base64 (only for Gemini Native)
     let base64Image = '';
     let mimeType = 'image/jpeg';
     
     if (selectedModel.apiType === 'gemini-native') {
-      const imageResponse = await fetch(imageUrl);
+      let imageResponse;
+      try {
+        imageResponse = await safeFetch(imageUrl);
+      } catch (err) {
+        return NextResponse.json(
+          { error: 'Unsafe or invalid image URL provided' },
+          { status: 400 }
+        );
+      }
+
       if (!imageResponse.ok) {
         throw new Error('Failed to fetch image');
       }

@@ -64,20 +64,22 @@ export async function POST(request: NextRequest) {
       ? `${conversationContext}Current question: ${userQuestion}`
       : userQuestion;
 
-    // Validate URL to prevent SSRF
-    const { isSafeUrl } = await import('@/lib/ssrf-guard');
-    if (!(await isSafeUrl(imageUrl))) {
+    // Validate URL and fetch safely to prevent SSRF and DNS rebinding
+    const { safeFetch } = await import('@/lib/ssrf-guard');
+    
+    let imageResponse;
+    try {
+      imageResponse = await safeFetch(imageUrl);
+    } catch (err) {
       return NextResponse.json(
         { error: 'Unsafe or invalid image URL provided' },
         { status: 400 }
       );
     }
-
-    // Fetch the image and convert to base64
+    
     let base64Image = '';
     let mimeType = 'image/jpeg';
     
-    const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       throw new Error('Failed to fetch image from URL');
     }
