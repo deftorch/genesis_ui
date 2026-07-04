@@ -91,3 +91,6 @@ The production logs will be written to `./logs/out.log` and `./logs/err.log`. En
 3.  **XSS Protection**: Markdown rendering utilizes `rehype-sanitize` to purge unsafe HTML tags and scripts.
 4.  **MIME Verification**: Image uploads inspect hex magic numbers (`FFD8FF`, `89504E47`, `47494638`, `52494646`) to avoid extension spoofing.
 5.  **Timing Attack Prevention**: Cron endpoints use `crypto.timingSafeEqual` for authorization header verification.
+
+> [!WARNING]  
+> **Rate Limiter Configuration**: The internal rate limiter parses the `x-forwarded-for` or `x-real-ip` headers. When deploying behind a reverse proxy (e.g., Nginx, Cloudflare), **ensure the proxy strips the original client's `x-forwarded-for` header before appending its own**. Otherwise, malicious actors can spoof this header to bypass rate limits.

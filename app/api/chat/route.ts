@@ -118,8 +118,20 @@ export async function POST(req: NextRequest) {
                   accumulatedContext += `\n[Tool Output Context (${currentNode.title}): Failed to fetch data]\n`;
                 }
               } else if (currentNode.type === 'agent') {
-                await new Promise(r => setTimeout(r, 1200));
-                sendEvent('debug', { message: `✅ [Workflow] Agent analysis complete.` });
+                sendEvent('debug', { message: `🤖 [Workflow] Agent analyzing context...` });
+                try {
+                  const { callGeminiWithRotation } = await import('@/lib/gemini-client');
+                  const agentResponse = await callGeminiWithRotation(currentNode.config?.model || 'gemini-3.5-flash', {
+                    contents: [{ role: 'user', parts: [{ text: `Analyze the following context and provide insights based on your role (${currentNode.title}):\n\n${accumulatedContext}` }] }],
+                    generationConfig: { temperature: 0.7 }
+                  }, providersConfig?.google?.apiKey);
+                  
+                  const agentText = agentResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'No insights generated.';
+                  accumulatedContext += `\n[Agent Output (${currentNode.title}):\n${agentText}]\n`;
+                  sendEvent('debug', { message: `✅ [Workflow] Agent analysis complete.` });
+                } catch (agentErr: any) {
+                  sendEvent('debug', { message: `⚠️ [Workflow] Agent analysis failed: ${agentErr.message}` });
+                }
               } else if (currentNode.type === 'condition') {
                 await new Promise(r => setTimeout(r, 500));
                 sendEvent('debug', { message: `✅ [Workflow] Condition evaluated: Proceeding to next step.` });
