@@ -1,4 +1,13 @@
 import { LRUCache } from 'lru-cache';
+import { NextRequest } from 'next/server';
+
+export function getIpFromRequest(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  return request.headers.get('x-real-ip') || 'anonymous';
+}
 
 type Options = {
   uniqueTokenPerInterval?: number;
@@ -12,7 +21,8 @@ export function rateLimit(options?: Options) {
   });
 
   return {
-    check: (limit: number, token: string) => {
+    check: (limit: number, requestOrToken: NextRequest | string) => {
+      const token = typeof requestOrToken === 'string' ? requestOrToken : getIpFromRequest(requestOrToken);
       const tokenCount = tokenCache.get(token) ?? [0];
       const currentUsage = tokenCount[0];
 

@@ -1,25 +1,26 @@
-# Genesis
+# Deftorch
 
-Genesis is a premium, highly interactive creative AI assistant specialized in generating and rendering visual content using **p5.js**, **D3.js**, **SVG**, and **Mermaid.js** sandboxed inside iframe isolation containers.
+Deftorch is a secure, standalone multi-model AI orchestrator designed to provide a unified chat interface for interacting with various LLM providers (Gemini, OpenRouter, Ollama) and advanced agentic workflows.
 
 ---
 
 ## 🚀 Key Features
 
-*   **Generative Art & Visualizations**: Interact with AI to compile live previews of visual code (p5.js sketches, D3.js data charts, Mermaid flowcharts, SVG illustrations).
-*   **Sandboxed Runtimes**: Renders user-generated canvas scripts securely inside scoped iframes using strict origin policies (`sandbox="allow-scripts"`).
-*   **Multi-Turn Conversations**: Utilizes the official Google Gemini API structure with system prompts and structural message arrays.
-*   **API Key Rotation**: Automatically falls back and rotates between a cluster of configured Gemini API keys to guarantee maximum uptime.
+*   **Multi-Model Orchestration**: Switch seamlessly between models from different providers in a unified chat experience.
+*   **Bring Your Own Key (BYOK)**: Secure, stateless API key injection. Keys are configured client-side and passed safely in request payloads without server-side persistence.
+*   **Agentic Workflows**: Support for sequential agent pipelines (e.g., Drafter to Reviewer) and condition-based routing.
+*   **Native Tools & Grounding**: Integrated support for Google Search Grounding and server-side Code Execution (rendering outputs safely as Markdown).
+*   **API Key Rotation**: Automatically falls back and rotates between a cluster of configured Gemini API keys to guarantee maximum uptime for default endpoints.
 *   **Safe Uploads**: Validates file types by matching their binary headers (magic bytes) to prevent malicious code injection.
 
 ---
 
 ## 🛠️ Tech Stack
 
-*   **Framework**: Next.js 15 (App Router, Standalone Output)
-*   **Frontend**: React 18, Tailwind CSS, Lucide React, Zustand State Management
-*   **Model Provider**: Google Generative AI (Gemini 1.5, 2.0, 2.5, 3.0 series)
-*   **Visual Engines**: p5.js, D3.js, Mermaid, SVG
+*   **Framework**: Next.js (App Router, Standalone Output)
+*   **Frontend**: React, Tailwind CSS, Lucide React, Zustand State Management
+*   **Model Providers**: Google Gemini (native), OpenRouter (Claude, Llama, etc.), Ollama (local)
+*   **HTTP Client**: Undici (customized for TOCTOU prevention)
 *   **Development & Testing Tooling**: Bun Runtime, PM2, TypeScript, ESLint
 
 ---
@@ -30,11 +31,11 @@ Create a `.env.local` (for development) or `.env` (for production) file in the r
 
 ```env
 # Gemini API Configuration
-# Multiple keys can be separated by commas for automated key rotation
+# Multiple keys can be separated by commas for automated key rotation (used if BYOK is not provided)
 GEMINI_API_KEYS=your_first_key,your_second_key
 
 # Model Settings
-NEXT_PUBLIC_DEFAULT_MODEL=gemini-3-flash
+NEXT_PUBLIC_DEFAULT_MODEL=gemini-2.5-flash
 
 # Cleanup Endpoint Security Token
 CRON_TOKEN=a-long-securely-generated-secret-token
@@ -69,14 +70,14 @@ bun run build
 ---
 
 ## 🖥️ PM2 Process Management
-Genesis is pre-configured for PM2 deployments. Run the application in production mode using:
+Deftorch is pre-configured for PM2 deployments. Run the application in production mode using:
 
 ```bash
 # Start with PM2
 pm2 start ecosystem.config.js
 
 # View active logs
-pm2 logs genesis
+pm2 logs deftorch
 ```
 
 The production logs will be written to `./logs/out.log` and `./logs/err.log`. Ensure the `logs` folder exists before running PM2 in production.
@@ -85,7 +86,8 @@ The production logs will be written to `./logs/out.log` and `./logs/err.log`. En
 
 ## 🔒 Security Measures
 
-1.  **XSS Protection**: Markdown rendering utilizes `rehype-sanitize` to purge unsafe HTML tags and scripts.
-2.  **SSRF Shield**: Image analysis fetches validate input URLs against internal/private IP ranges (RFC 1918) prior to dispatching HTTP requests.
-3.  **Iframe Isolation**: Rendering iframes exclude `allow-same-origin` to isolate client session details (cookies/localStorage) from generated canvas scripts.
+1.  **Stateless BYOK**: API keys provided by the user are never stored on the server. They are transmitted securely and consumed per-request.
+2.  **SSRF / DNS Rebinding Shield**: Image analysis and URL fetching utilize a hardened `safeFetch` implementation (powered by `undici`). It resolves DNS only once and forces the HTTP connection to that specific, validated, non-private IP to prevent TOCTOU vulnerabilities.
+3.  **XSS Protection**: Markdown rendering utilizes `rehype-sanitize` to purge unsafe HTML tags and scripts.
 4.  **MIME Verification**: Image uploads inspect hex magic numbers (`FFD8FF`, `89504E47`, `47494638`, `52494646`) to avoid extension spoofing.
+5.  **Timing Attack Prevention**: Cron endpoints use `crypto.timingSafeEqual` for authorization header verification.

@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, unlink, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate the request
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get('authorization') || '';
     
     const cronToken = process.env.CRON_TOKEN;
 
@@ -19,7 +20,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const isAuthorized = authHeader === `Bearer ${cronToken}`;
+    const expectedHeader = `Bearer ${cronToken}`;
+    const isAuthorized = authHeader.length === expectedHeader.length && 
+                         crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedHeader));
 
     if (!isAuthorized) {
       return NextResponse.json(

@@ -22,13 +22,9 @@ const ChatRequestSchema = z.object({
   })).max(10).optional(),
 });
 
-export async function POST(req: Request) {
-  const ip = req.headers.get('x-forwarded-for') 
-          ?? req.headers.get('x-real-ip') 
-          ?? 'anonymous';
-
+export async function POST(req: NextRequest) {
   try {
-    chatRateLimiter.check(20, ip);
+    chatRateLimiter.check(20, req);
   } catch {
     return NextResponse.json(
       { error: 'Too many requests. Please slow down.' },
@@ -104,9 +100,23 @@ export async function POST(req: Request) {
               sendEvent('debug', { message: `⏳ [Workflow] Executing node: ${currentNode.title} (${currentNode.type})` });
               
               if (currentNode.type === 'tool') {
-                await new Promise(r => setTimeout(r, 1000));
-                accumulatedContext += `\n[Tool Output Context: Fetched 3 related documents from the web search.]`;
-                sendEvent('debug', { message: `✅ [Workflow] Tool completed successfully.` });
+                sendEvent('debug', { message: `🔍 [Workflow] Tool executing: Fetching real data via Gemini Grounding API...` });
+                
+                try {
+                  const { callGeminiWithRotation } = await import('@/lib/gemini-client');
+                  const toolResponse = await callGeminiWithRotation('gemini-2.5-flash', {
+                    contents: [{ role: 'user', parts: [{ text: `Perform a web search to gather relevant context for this prompt: ${accumulatedContext}` }] }],
+                    tools: [{ googleSearch: {} }],
+                    generationConfig: { temperature: 0.3 }
+                  }, providersConfig?.google?.apiKey);
+                  
+                  const toolText = toolResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'No additional information found.';
+                  accumulatedContext += `\n[Tool Output Context (${currentNode.title}):\n${toolText}]\n`;
+                  sendEvent('debug', { message: `✅ [Workflow] Tool completed successfully.` });
+                } catch (toolErr: any) {
+                  sendEvent('debug', { message: `⚠️ [Workflow] Tool execution failed: ${toolErr.message}` });
+                  accumulatedContext += `\n[Tool Output Context (${currentNode.title}): Failed to fetch data]\n`;
+                }
               } else if (currentNode.type === 'agent') {
                 await new Promise(r => setTimeout(r, 1200));
                 sendEvent('debug', { message: `✅ [Workflow] Agent analysis complete.` });

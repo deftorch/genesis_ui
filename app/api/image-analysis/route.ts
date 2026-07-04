@@ -17,12 +17,8 @@ const ImageAnalysisRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')
-          ?? request.headers.get('x-real-ip')
-          ?? 'anonymous';
-
   try {
-    analysisRateLimiter.check(15, ip);
+    analysisRateLimiter.check(15, request);
   } catch {
     return NextResponse.json(
       { error: 'Too many analysis requests. Please slow down.' },
