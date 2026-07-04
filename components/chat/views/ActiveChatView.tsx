@@ -161,9 +161,9 @@ export const ActiveChatView: React.FC<ActiveChatViewProps> = ({
                     disabled={isLoading}
                     className="flex items-center gap-1 bg-transparent hover:bg-[#1a6adf]/10 dark:hover:bg-white/10 rounded-lg py-1 px-2.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0a1628] dark:hover:text-white transition-colors cursor-pointer font-medium disabled:opacity-50"
                   >
-                    <span>
+                    <span className="flex items-center gap-1.5">
                       {selectedAgent 
-                        ? <><Bot size={12} className="text-[#1a6adf] dark:text-[#60aaff]" /> {chatStore.agents.find(a => a.id === selectedAgent)?.name || selectedAgent}</>
+                        ? <><Bot size={12} className="text-[#1a6adf] dark:text-[#60aaff]" /> <span className="truncate max-w-[120px]">{chatStore.agents.find(a => a.id === selectedAgent)?.name || selectedAgent}</span></>
                         : 'No Agent'}
                     </span>
                     <ChevronDown size={12} className={`stroke-[2] transition-transform ${isAgentDropdownOpen ? 'rotate-180' : ''}`} />
