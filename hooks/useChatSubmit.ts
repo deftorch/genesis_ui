@@ -146,6 +146,14 @@ export function useChatSubmit({ chatId, selectedModel, selectedAgent }: UseChatS
           };
         }
       }
+      
+      const settingsStore = useSettingsStore.getState();
+      if (!selectedAgent && settingsStore.preferences.defaultSystemInstruction) {
+        finalConfig = {
+          ...finalConfig,
+          systemInstruction: settingsStore.preferences.defaultSystemInstruction,
+        };
+      }
 
       // Check if selectedModel is a composite model or workflow
       const compositeModel = latestChatStore.compositeModels?.find(m => m.id === selectedModel);
@@ -401,6 +409,14 @@ export function useChatSubmit({ chatId, selectedModel, selectedAgent }: UseChatS
             useStructuredOutputs: agent.useStructuredOutputs,
           };
         }
+      }
+      
+      const settingsStore = useSettingsStore.getState();
+      if (!selectedAgent && settingsStore.preferences.defaultSystemInstruction) {
+        finalConfig = {
+          ...finalConfig,
+          systemInstruction: settingsStore.preferences.defaultSystemInstruction,
+        };
       }
 
       const compositeModel = chatStore.compositeModels?.find(m => m.id === selectedModel);

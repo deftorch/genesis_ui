@@ -232,6 +232,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                       <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
+                  
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                      Default System Instruction
+                    </label>
+                    <textarea
+                      value={preferences.defaultSystemInstruction || ''}
+                      onChange={(e) => updatePreferences({ defaultSystemInstruction: e.target.value })}
+                      placeholder="You are Deftorch, a powerful agentic orchestration AI..."
+                      className="w-full h-32 px-4 py-3 bg-white dark:bg-[#1a1b2e] text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-200 dark:border-gray-700 resize-y"
+                    />
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      This instruction acts as the base persona/rules for all chats unless a specific Agent with its own instruction is selected. Leave empty to use the built-in defaults.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

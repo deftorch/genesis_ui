@@ -253,6 +253,7 @@ export interface UserPreferences {
   showTokenCount: boolean;
   enableNotifications: boolean;
   developerMode?: boolean;
+  defaultSystemInstruction?: string;
 }
 
 export interface UsageStats {
