@@ -15,7 +15,6 @@ const ChatRequestSchema = z.object({
   modelId: z.string().optional(),
   config: z.any().optional(),
   providersConfig: z.any().optional(),
-  currentCode: z.string().max(500000).optional(),
   images: z.array(z.object({
     base64: z.string().optional(),
     mimeType: z.string().optional(),
@@ -48,8 +47,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { messages, model, modelId, config, providersConfig, currentCode: rawCurrentCode, images } = parseResult.data;
-    const currentCode = rawCurrentCode ? sanitizeCodeForPrompt(rawCurrentCode) : '';
+    const { messages, model, modelId, config, providersConfig, images } = parseResult.data;
 
     // Get the last user message
     const lastMessage = messages[messages.length - 1];
@@ -80,36 +78,6 @@ export async function POST(req: Request) {
     // If a custom system prompt is provided (via Agent or Settings), it becomes the absolute system prompt.
     // If none is provided, it remains completely empty.
     let systemPrompt = customSystemPrompt || '';
-
-    // If there's existing code in the sandbox, we append a strict instruction to modify it
-    if (currentCode && currentCode.trim()) {
-      const trimmedCode = currentCode.trimStart();
-      const isD3 = trimmedCode.startsWith('// renderer: d3');
-      const isSVG = trimmedCode.startsWith('// renderer: svg');
-      const isTwoJs = trimmedCode.startsWith('// renderer: twojs');
-      const isMoJs = trimmedCode.startsWith('// renderer: mojs');
-      const isPixi = trimmedCode.startsWith('// renderer: pixi');
-      const isGsap = trimmedCode.startsWith('// renderer: gsap');
-      const isAnime = trimmedCode.startsWith('// renderer: anime');
-      const isLottie = trimmedCode.startsWith('// renderer: lottie');
-      const isMatter = trimmedCode.startsWith('// renderer: matter');
-      const isRemotion = trimmedCode.startsWith('// renderer: remotion');
-      const isPlan = trimmedCode.startsWith('// renderer: plan');
-      const rendererName = isD3 ? 'D3.js' : isSVG ? 'SVG' : isTwoJs ? 'Two.js' : isMoJs ? 'Mo.js' : isPixi ? 'PixiJS' : isGsap ? 'GSAP' : isAnime ? 'Anime.js' : isLottie ? 'Lottie' : isMatter ? 'Matter.js' : isRemotion ? 'Remotion' : isPlan ? 'Implementation Plan' : 'p5.js';
-      
-      systemPrompt += (systemPrompt ? '\n\n' : '') + `CRITICAL: The user already has existing ${rendererName} code. You must MODIFY this existing code based on their request, NOT create completely new code from scratch.
-- Keep the existing structure and logic that works
-- Only add, remove, or modify the parts necessary to fulfill the user's new request
-- Preserve any existing features unless the user explicitly asks to remove them
-- Keep using the same renderer (${rendererName}) unless the user explicitly asks to switch
-
-=== CURRENT CODE ===
-\`\`\`javascript
-${currentCode}
-\`\`\`
-=== END CURRENT CODE ===
-`;
-    }
 
     let targetModel = modelId || model || 'gemini-3.5-flash';
 
@@ -165,7 +133,7 @@ ${currentCode}
               generationConfig: { temperature: 0.5, maxOutputTokens: 8192 }
             };
             
-            const geminiResponse = await streamGeminiWithRotation('gemini-3-flash-preview', requestBody);
+            const geminiResponse = await streamGeminiWithRotation('gemini-3-flash-preview', requestBody, providersConfig?.google?.apiKey);
             
             if (geminiResponse.body) {
               const reader = geminiResponse.body.getReader();
@@ -374,7 +342,7 @@ ${currentCode}
       const geminiModelId = modelIdMap[targetModel] || 'gemini-3-flash-preview';
 
       // Call Gemini with Key Rotation to get a stream
-      const response = await streamGeminiWithRotation(geminiModelId, requestBody);
+      const response = await streamGeminiWithRotation(geminiModelId, requestBody, providersConfig?.google?.apiKey);
 
       return new Response(response.body, {
         headers: {

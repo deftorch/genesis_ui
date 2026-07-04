@@ -13,17 +13,11 @@ export const API_CONFIG = {
 };
 
 // Helper to get all configured Gemini API keys for rotation
-export function getGeminiApiKeys(): string[] {
+export function getGeminiApiKeys(userKey?: string): string[] {
   const keys: string[] = [];
   
-  try {
-    const { useSettingsStore } = require('@/lib/store/settings-store');
-    const storeKey = useSettingsStore.getState().getAPIKey('google');
-    if (storeKey && storeKey.key && storeKey.isActive) {
-      keys.push(storeKey.key);
-    }
-  } catch (e) {
-    // Ignore server-side require errors
+  if (userKey) {
+    keys.push(userKey);
   }
   
   if (process.env.GEMINI_API_KEY) {

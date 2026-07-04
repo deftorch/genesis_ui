@@ -9,8 +9,8 @@ import { logger } from '@/lib/logger';
  * @param requestBody The JSON body for the generateContent request
  * @returns The parsed JSON response data from the Gemini API
  */
-export async function callGeminiWithRotation(modelId: string, requestBody: any): Promise<any> {
-  const apiKeys = getGeminiApiKeys();
+export async function callGeminiWithRotation(modelId: string, requestBody: any, userKey?: string): Promise<any> {
+  const apiKeys = getGeminiApiKeys(userKey);
   if (apiKeys.length === 0) {
     throw new Error('Gemini API key not configured');
   }
@@ -81,8 +81,8 @@ export async function callGeminiWithRotation(modelId: string, requestBody: any):
 /**
  * Helper to call Google Generative Language API (Gemini) with key rotation, returning a stream.
  */
-export async function streamGeminiWithRotation(modelId: string, requestBody: any): Promise<Response> {
-  const apiKeys = getGeminiApiKeys();
+export async function streamGeminiWithRotation(modelId: string, requestBody: any, userKey?: string): Promise<Response> {
+  const apiKeys = getGeminiApiKeys(userKey);
   if (apiKeys.length === 0) {
     throw new Error('Gemini API key not configured');
   }

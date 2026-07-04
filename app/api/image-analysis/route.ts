@@ -13,6 +13,7 @@ const ImageAnalysisRequestSchema = z.object({
     role: z.enum(['user', 'assistant', 'system', 'model']),
     content: z.string().max(50000),
   })).max(100).optional(),
+  providersConfig: z.any().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { imageUrl, text, sessionId, messages = [] } = parseResult.data;
+    const { imageUrl, text, sessionId, messages = [], providersConfig } = parseResult.data;
 
     // Build conversation context - limit to last 5 messages to avoid token limit
     let conversationContext = '';
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     };
 
     const modelId = 'gemini-2.0-flash-exp';
-    const data = await callGeminiWithRotation(modelId, requestBody);
+    const data = await callGeminiWithRotation(modelId, requestBody, providersConfig?.google?.apiKey);
 
     if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
       throw new Error('Invalid response from Gemini API');

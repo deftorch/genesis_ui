@@ -11,6 +11,7 @@ const GeminiAnalysisRequestSchema = z.object({
   prompt: z.string().max(50000).optional(),
   analysisType: z.string().optional(),
   modelId: z.string().optional(),
+  providersConfig: z.any().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { imageUrl, prompt, analysisType, modelId = 'gemini-native' } = parseResult.data;
+    const { imageUrl, prompt, analysisType, modelId = 'gemini-native', providersConfig } = parseResult.data;
 
     // Find selected model
     const selectedModel = IMAGE_ANALYSIS_MODELS.find(m => m.id === modelId);
@@ -51,15 +52,14 @@ export async function POST(request: NextRequest) {
 
 
 
-    // Validate API keys based on model type
-    if (selectedModel.apiType === 'gemini-native' && !API_CONFIG.GEMINI_API_KEY) {
+    if (selectedModel.apiType === 'gemini-native' && !API_CONFIG.GEMINI_API_KEY && !providersConfig?.google?.apiKey) {
       return NextResponse.json(
         { error: 'Gemini API key not configured' },
         { status: 500 }
       );
     }
 
-    if (selectedModel.apiType === 'openrouter' && !API_CONFIG.OPENROUTER_API_KEY) {
+    if (selectedModel.apiType === 'openrouter' && !API_CONFIG.OPENROUTER_API_KEY && !providersConfig?.openrouter?.apiKey) {
       return NextResponse.json(
         { error: 'OpenRouter API key not configured' },
         { status: 500 }
@@ -320,7 +320,7 @@ Analisis gambar dengan cermat dan berikan jawaban yang komprehensif.` :
         },
       };
 
-      const data = await callGeminiWithRotation(selectedModel.modelId, requestBody);
+      const data = await callGeminiWithRotation(selectedModel.modelId, requestBody, providersConfig?.google?.apiKey);
 
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         logger.error('Invalid Gemini response structure', { data: JSON.stringify(data).slice(0, 500) });
@@ -364,7 +364,7 @@ Analisis gambar dengan cermat dan berikan jawaban yang komprehensif.` :
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_CONFIG.OPENROUTER_API_KEY}`,
+            'Authorization': `Bearer ${providersConfig?.openrouter?.apiKey || API_CONFIG.OPENROUTER_API_KEY}`,
             'HTTP-Referer': API_CONFIG.OPENROUTER_SITE_URL || 'http://localhost:3000',
             'X-Title': API_CONFIG.OPENROUTER_SITE_NAME || 'Genesis',
           },
