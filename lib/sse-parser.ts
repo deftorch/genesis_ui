@@ -25,89 +25,110 @@ export const parseSSEStream = async (
 
       for (const line of lines) {
         const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('data:')) {
+        if (!trimmedLine) continue;
+
+        // --- VERCEL AI SDK DATA STREAM PROTOCOL PARSING ---
+        
+        // 0: Text chunk
+        if (trimmedLine.startsWith('0:')) {
+          try {
+            const textChunk = JSON.parse(trimmedLine.slice(2));
+            onChunk(textChunk);
+          } catch (e) {}
+        } 
+        
+        // d: Finish message (includes usage metadata)
+        else if (trimmedLine.startsWith('d:')) {
+          try {
+            const finishData = JSON.parse(trimmedLine.slice(2));
+            if (finishData.usage) {
+              finalUsageMetadata = {
+                promptTokenCount: finishData.usage.promptTokens,
+                candidatesTokenCount: finishData.usage.completionTokens,
+                totalTokenCount: (finishData.usage.promptTokens || 0) + (finishData.usage.completionTokens || 0)
+              };
+            }
+          } catch (e) {}
+        }
+
+        // 3: Error message
+        else if (trimmedLine.startsWith('3:')) {
+           try {
+             const errorMsg = JSON.parse(trimmedLine.slice(2));
+             if (onEvent) onEvent({ type: 'error', error: errorMsg });
+           } catch (e) {}
+        }
+        
+        // 9: Tool call
+        else if (trimmedLine.startsWith('9:')) {
+           try {
+             const toolCallData = JSON.parse(trimmedLine.slice(2));
+             // Mengirim event debug ke UI saat tool dipanggil
+             if (onEvent) onEvent({ type: 'debug', message: `🛠️ Agen Memanggil Tool: ${toolCallData.toolName}` });
+           } catch (e) {}
+        }
+        
+        // a: Tool result
+        else if (trimmedLine.startsWith('a:')) {
+           try {
+             if (onEvent) onEvent({ type: 'debug', message: `✅ Eksekusi Tool Selesai.` });
+           } catch (e) {}
+        }
+        
+        // 2: Data messages (custom events / tool data)
+        else if (trimmedLine.startsWith('2:')) {
+           try {
+             const dataArray = JSON.parse(trimmedLine.slice(2));
+             if (Array.isArray(dataArray) && onEvent) {
+                dataArray.forEach(event => onEvent(event));
+             }
+           } catch (e) {}
+        }
+
+        // --- LEGACY SSE PARSING (Fallback untuk kompatibilitas ke belakang) ---
+        else if (trimmedLine.startsWith('data:')) {
           const dataStr = trimmedLine.slice(5).trim();
           if (dataStr === '[DONE]' || !dataStr) continue;
           try {
             const eventData = JSON.parse(dataStr);
-            
-            // Invoke onEvent callback with raw event payload
             if (onEvent) onEvent(eventData);
 
             if (eventData.type === 'chunk' && typeof eventData.text === 'string') {
               onChunk(eventData.text);
-            } else if (eventData.type === 'finish') {
-              if (eventData.usage) {
-                finalUsageMetadata = {
-                  promptTokenCount: eventData.usage.promptTokens,
-                  candidatesTokenCount: eventData.usage.completionTokens,
-                  totalTokenCount: eventData.usage.totalTokens
-                };
-              }
+            } else if (eventData.type === 'finish' && eventData.usage) {
+              finalUsageMetadata = {
+                promptTokenCount: eventData.usage.promptTokens,
+                candidatesTokenCount: eventData.usage.completionTokens,
+                totalTokenCount: eventData.usage.totalTokens
+              };
             } else if (eventData.candidates) {
-              // Legacy fallback for native Gemini stream
               if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
               const parts = eventData.candidates?.[0]?.content?.parts || [];
               let combinedText = '';
               for (const part of parts) {
-                if (part.text) {
-                  combinedText += part.text;
-                }
-                if (part.executableCode) {
-                  combinedText += `\n\`\`\`python\n// Executing code...\n${part.executableCode.code}\n\`\`\`\n`;
-                }
-                if (part.codeExecutionResult) {
-                  combinedText += `\n\`\`\`\n// Execution result:\n${part.codeExecutionResult.output}\n\`\`\`\n`;
-                }
+                if (part.text) combinedText += part.text;
+                if (part.executableCode) combinedText += `\n\`\`\`python\n// Executing code...\n${part.executableCode.code}\n\`\`\`\n`;
+                if (part.codeExecutionResult) combinedText += `\n\`\`\`\n// Execution result:\n${part.codeExecutionResult.output}\n\`\`\`\n`;
               }
               if (combinedText) onChunk(combinedText);
             } else if (eventData.choices) {
-              // OpenAI / OpenRouter format
               const textChunk = eventData.choices?.[0]?.delta?.content;
               if (textChunk) onChunk(textChunk);
             }
-          } catch (e) {
-            // Abaikan JSON yang tidak valid
-          }
+          } catch (e) {}
         }
       }
     }
   }
 
-  // Handle remaining buffer
+  // Final parsing fallback for buffer edge cases
   if (buffer.trim().startsWith('data:')) {
     try {
       const dataStr = buffer.trim().slice(5).trim();
       if (dataStr && dataStr !== '[DONE]') {
         const eventData = JSON.parse(dataStr);
-        if (onEvent) onEvent(eventData);
         if (eventData.type === 'chunk' && typeof eventData.text === 'string') {
           onChunk(eventData.text);
-        } else if (eventData.type === 'finish' && eventData.usage) {
-          finalUsageMetadata = {
-            promptTokenCount: eventData.usage.promptTokens,
-            candidatesTokenCount: eventData.usage.completionTokens,
-            totalTokenCount: eventData.usage.totalTokens
-          };
-        } else if (eventData.candidates) {
-          if (eventData.usageMetadata) finalUsageMetadata = eventData.usageMetadata;
-          const parts = eventData.candidates?.[0]?.content?.parts || [];
-          let combinedText = '';
-          for (const part of parts) {
-            if (part.text) {
-              combinedText += part.text;
-            }
-            if (part.executableCode) {
-              combinedText += `\n\`\`\`python\n// Executing code...\n${part.executableCode.code}\n\`\`\`\n`;
-            }
-            if (part.codeExecutionResult) {
-              combinedText += `\n\`\`\`\n// Execution result:\n${part.codeExecutionResult.output}\n\`\`\`\n`;
-            }
-          }
-          if (combinedText) onChunk(combinedText);
-        } else if (eventData.choices) {
-          const textChunk = eventData.choices?.[0]?.delta?.content;
-          if (textChunk) onChunk(textChunk);
         }
       }
     } catch (e) {}
